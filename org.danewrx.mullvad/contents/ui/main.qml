@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
@@ -57,25 +56,26 @@ PlasmoidItem {
         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
         Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
 
-        // Plain Image + tint: Kirigami.Icon was swapped for a theme icon after the first frame.
-        Image {
+        IconView {
             id: icon
             readonly property var cfg: Plasmoid.configuration
             readonly property bool on: root.vpnState === "connected" || root.vpnState === "connecting"
             anchors.centerIn: parent
-            width: Math.min(parent.width, parent.height) * 0.8 // icon scale
+            width: Math.min(parent.width, parent.height) * cfg.iconScale / 100 // 100% = the full slot
             height: width
-            source: (on ? cfg.lockIcon : cfg.unlockIcon) || Qt.resolvedUrl("../icons/" + (on ? "lock" : "unlock") + ".svg")
-            sourceSize: Qt.size(width * 2, height * 2)
-            fillMode: Image.PreserveAspectFit
+            value: on ? cfg.lockIcon : cfg.unlockIcon
+            fallback: Qt.resolvedUrl("../icons/" + (on ? "lock" : "unlock") + ".svg")
             opacity: root.vpnState === "connecting" ? 0.5 : 1.0
-            layer.enabled: cfg.tintIcons
-            layer.effect: MultiEffect {
-                brightness: 1.0 // colorization keeps luminance, so black art must be lifted to white first
-                colorization: 1.0
-                colorizationColor: (icon.on ? icon.cfg.activeUseSystem : icon.cfg.inactiveUseSystem)
-                                   ? Kirigami.Theme.textColor : (icon.on ? icon.cfg.activeColor : icon.cfg.inactiveColor)
+            tint: cfg.tintIcons
+            // Same order as the list in configAppearance.qml.
+            function system(i) {
+                return [Kirigami.Theme.textColor, Kirigami.Theme.positiveTextColor, Kirigami.Theme.negativeTextColor,
+                        Kirigami.Theme.neutralTextColor, Kirigami.Theme.highlightColor, Kirigami.Theme.linkColor,
+                        Kirigami.Theme.disabledTextColor][i]
             }
+            tintColor: cfg.colorMode === 0 ? (on ? "#1f8a3b" : "#da4453")
+                     : cfg.colorMode === 1 ? system(on ? cfg.activeSystem : cfg.inactiveSystem)
+                     : (on ? cfg.activeColor : cfg.inactiveColor)
         }
 
         MouseArea {
