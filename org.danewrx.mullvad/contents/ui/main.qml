@@ -17,23 +17,33 @@ PlasmoidItem {
     property string currentCity: ""
     property string relay: ""             // e.g. ca-tor-wg-201 (empty when not connected)
     property string visibleLocation: ""   // e.g. "Canada, Toronto" (also known while disconnected)
-    // `mullvad status` detail lines as [{k, v}] rows; "Canada, Toronto. IPv4: 1.2.3.4" is split into Location + IPv4.
+    property bool detailsOpen: false
+    readonly property var featureChips: {
+        const f = detail.match(/Features:\s*(.+)/)
+        return f ? f[1].split(/,\s*/) : []
+    }
     readonly property var detailRows: {
-        const rows = []
+        const imp = [], extra = []
         for (const l of detail.split("\n")) {
             const m = l.match(/^([^:]+):\s*(.*)$/)
             if (!m) continue
             if (m[1] === "Visible location") {
                 // IPs arrive a moment after the location, so they are optional: "Brazil, Sao Paulo[. IPv4: x[, IPv6: y]]"
                 const v = m[2].match(/^(.*?)(?:\.\s+(IPv[46]:.*))?$/)
-                rows.push({ k: "Location", v: v[1].replace(/\.$/, "") })
+                imp.push({ k: "Location", v: v[1].replace(/\.$/, ""), important: true })
                 for (const part of (v[2] || "").split(/,\s*/)) {   // no matchAll in QML's JS engine
                     const ip = part.match(/^(IPv[46]):\s*(\S+)/)
-                    if (ip) rows.push({ k: ip[1], v: ip[2] })
+                    if (ip) imp.push({ k: ip[1], v: ip[2], important: true })
                 }
-            } else rows.push({ k: m[1], v: m[2] })
+            } else if (m[1] === "Relay") {
+                // "exit-relay [via entry-relay] [(note)]", e.g. "ua-iev-wg-002 via ro-buh-wg-012 (multihop enabled ...)"
+                const r = m[2].match(/^(.*?)(?: via (\S+))?(?: \((.*)\))?$/)
+                extra.push({ k: "Relay", v: r[1] })
+                if (r[2]) extra.push({ k: "Via", v: r[2] })
+                if (r[3]) extra.push({ note: r[3] })
+            } else if (m[1] !== "Features") extra.push({ k: m[1], v: m[2] })
         }
-        return rows
+        return imp.concat(extra)
     }
     property string pending: ""
     property double pendingSince: 0
@@ -231,25 +241,64 @@ PlasmoidItem {
                 }
                 Repeater {
                     model: root.connecting ? [] : root.detailRows
-                    RowLayout {
+                    ColumnLayout {
+                        visible: modelData.important === true || root.detailsOpen
                         Layout.fillWidth: true
-                        spacing: Kirigami.Units.largeSpacing
-                        QQC2.Label {
-                            Layout.preferredWidth: Kirigami.Units.gridUnit * 4
-                            Layout.alignment: Qt.AlignTop
-                            text: modelData.k
-                            elide: Text.ElideRight
-                            color: banner.fg
-                            opacity: 0.7
-                            font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                        spacing: 0
+                        RowLayout {
+                            visible: modelData.k !== undefined
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.largeSpacing
+                            QQC2.Label {
+                                Layout.preferredWidth: Kirigami.Units.gridUnit * 3.5
+                                Layout.alignment: Qt.AlignTop
+                                text: modelData.k || ""
+                                elide: Text.ElideRight
+                                color: banner.fg
+                                opacity: 0.7
+                                font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                            }
+                            QQC2.Label {
+                                Layout.fillWidth: true
+                                text: modelData.v || ""
+                                color: banner.fg
+                                wrapMode: Text.WrapAnywhere // long hostnames have no spaces to wrap at
+                                font.bold: true
+                                font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                            }
                         }
                         QQC2.Label {
+                            visible: modelData.note !== undefined
                             Layout.fillWidth: true
-                            text: modelData.v
+                            text: modelData.note || ""
                             color: banner.fg
+                            opacity: 0.7
                             wrapMode: Text.Wrap
-                            font.bold: true
-                            font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                            font.italic: true
+                            font.pixelSize: Kirigami.Units.gridUnit * 0.7
+                        }
+                    }
+                }
+                Flow { // feature pills
+                    visible: !root.connecting && root.detailsOpen && root.featureChips.length > 0
+                    Layout.fillWidth: true
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    spacing: Kirigami.Units.smallSpacing
+                    Repeater {
+                        model: root.featureChips
+                        Rectangle {
+                            width: chipLabel.implicitWidth + Kirigami.Units.largeSpacing * 2
+                            height: chipLabel.implicitHeight + Kirigami.Units.smallSpacing
+                            radius: height / 2
+                            color: Qt.alpha(banner.fg, 0.15)
+                            border.color: Qt.alpha(banner.fg, 0.5)
+                            QQC2.Label {
+                                id: chipLabel
+                                anchors.centerIn: parent
+                                text: modelData
+                                color: banner.fg
+                                font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                            }
                         }
                     }
                 }
@@ -259,6 +308,20 @@ PlasmoidItem {
                     text: root.lastError
                     color: banner.fg
                     wrapMode: Text.Wrap
+                }
+                Kirigami.Icon { // expand / collapse the details
+                    visible: !root.connecting && (root.detailRows.some(r => !r.important) || root.featureChips.length > 0)
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                    Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                    source: root.detailsOpen ? "arrow-up" : "arrow-down"
+                    isMask: true
+                    color: banner.fg
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -Kirigami.Units.smallSpacing
+                        onClicked: root.detailsOpen = !root.detailsOpen
+                    }
                 }
             }
         }
