@@ -171,7 +171,7 @@ PlasmoidItem {
             z: 2
             height: implicitHeight
             implicitHeight: bannerContent.implicitHeight + Kirigami.Units.largeSpacing * 2
-            Behavior on implicitHeight { NumberAnimation { duration: Kirigami.Units.shortDuration } }
+            Behavior on implicitHeight { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } } // dropdown
             color: root.stateColor
             clip: true
             // black or white text, whichever reads on the chosen color
@@ -198,7 +198,8 @@ PlasmoidItem {
             }
             ColumnLayout {
                 id: bannerContent
-                anchors { fill: parent; margins: Kirigami.Units.largeSpacing }
+                // top-anchored, not fill: the banner height animates, and a stretched layout re-spaces its children
+                anchors { top: parent.top; left: parent.left; right: parent.right; margins: Kirigami.Units.largeSpacing }
                 spacing: Kirigami.Units.smallSpacing
                 RowLayout {
                     IconView {
@@ -366,7 +367,7 @@ PlasmoidItem {
                 y: root.picking ? banner.height : parent.height
                 visible: y < parent.height
                 color: Kirigami.Theme.backgroundColor
-                Behavior on y { NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } } // picker slide
                 QQC2.ScrollView {
                     anchors.fill: parent
                     ListView {
@@ -415,7 +416,10 @@ PlasmoidItem {
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: Kirigami.Units.smallSpacing }
             text: root.picking ? i18n("Close") : i18n("Switch location")
             icon.name: root.picking ? "go-down" : "go-up"
-            onClicked: { if (!root.picking) root.loadRelays(); root.picking = !root.picking }
+            onClicked: {
+                if (!root.picking) { root.loadRelays(); root.detailsOpen = false }
+                root.picking = !root.picking
+            }
         }
     }
 
