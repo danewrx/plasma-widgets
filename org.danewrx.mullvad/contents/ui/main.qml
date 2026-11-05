@@ -160,15 +160,16 @@ PlasmoidItem {
     }
 
 
-    fullRepresentation: ColumnLayout {
+    fullRepresentation: Item {
         Layout.preferredWidth: Kirigami.Units.gridUnit * 16
         Layout.preferredHeight: Kirigami.Units.gridUnit * 28
-        spacing: 0
 
         // ---- banner: switch + every detail from `mullvad status` ----
         Rectangle {
             id: banner
-            Layout.fillWidth: true
+            anchors { top: parent.top; left: parent.left; right: parent.right }
+            z: 2
+            height: implicitHeight
             implicitHeight: bannerContent.implicitHeight + Kirigami.Units.largeSpacing * 2
             Behavior on implicitHeight { NumberAnimation { duration: Kirigami.Units.shortDuration } }
             color: root.stateColor
@@ -329,8 +330,7 @@ PlasmoidItem {
         // ---- map, with the location list sliding up over it ----
         Item {
             id: mapView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            anchors { top: parent.top; left: parent.left; right: parent.right; bottom: switchButton.top }
             clip: true
 
             Rectangle { anchors.fill: parent; color: Kirigami.Theme.backgroundColor }
@@ -342,7 +342,7 @@ PlasmoidItem {
                 width: mapView.width * zoom
                 height: width / 2
                 x: Math.min(0, Math.max(mapView.width - width, mapView.width / 2 - px.x))
-                y: Math.min(0, Math.max(mapView.height - height, mapView.height / 2 - px.y))
+                y: Math.min(0, Math.max(mapView.height - height, mapView.height * 0.6 - px.y))
                 source: Qt.resolvedUrl("../images/world.svg")
                 sourceSize: Qt.size(width, height)
                 opacity: 0.15
@@ -362,8 +362,8 @@ PlasmoidItem {
             Rectangle {
                 id: locationPanel
                 width: parent.width
-                height: parent.height
-                y: root.picking ? 0 : parent.height
+                height: parent.height - banner.height
+                y: root.picking ? banner.height : parent.height
                 visible: y < parent.height
                 color: Kirigami.Theme.backgroundColor
                 Behavior on y { NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutCubic } }
@@ -411,8 +411,8 @@ PlasmoidItem {
         }
 
         QQC2.Button {
-            Layout.fillWidth: true
-            Layout.margins: Kirigami.Units.smallSpacing
+            id: switchButton
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: Kirigami.Units.smallSpacing }
             text: root.picking ? i18n("Close") : i18n("Switch location")
             icon.name: root.picking ? "go-down" : "go-up"
             onClicked: { if (!root.picking) root.loadRelays(); root.picking = !root.picking }
