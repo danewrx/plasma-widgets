@@ -54,8 +54,8 @@ KCM.SimpleKCM {
         Item { implicitHeight: Kirigami.Units.largeSpacing }
     }
 
-    readonly property var systemColorNames: [i18n("Text"), i18n("Positive (green)"), i18n("Negative (red)"),
-                                             i18n("Neutral (orange)"), i18n("Highlight"), i18n("Link"), i18n("Disabled text")]
+    readonly property var systemColorNames: [i18n("Text"), i18n("Positive"), i18n("Negative"), i18n("Neutral"),
+                                             i18n("Highlight"), i18n("Link"), i18n("Disabled text")]
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
