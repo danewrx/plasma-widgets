@@ -1,7 +1,7 @@
 <h1 align="center"><img src="docs/kde-logo.svg" height="40" alt="KDE logo">&nbsp; Plasma Widgets</h1>
 
 <p align="center">
-  Collection of widgets I have created for KDE Plasma
+  Widgets for KDE Plasma, made by me ( • ⩊ • )
 </p>
 
 <p align="center">
