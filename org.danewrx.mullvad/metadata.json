@@ -15,7 +15,7 @@
         "Id": "org.danewrx.mullvad",
         "License": "MIT",
         "Name": "Mullvad VPN",
-        "Version": "1.0",
+        "Version": "1.0.0",
         "Website": "https://github.com/danewrx/plasma-widgets"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
