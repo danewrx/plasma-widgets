@@ -23,7 +23,7 @@ Widget code is cached by the shell, so restart it to see changes in the panel: `
 
 ## Adding a widget
 1. Put it in its own folder named after its plugin id (e.g. `org.danewrx.mullvad`).
-2. Add it to the issue form dropdowns in `.github/ISSUE_TEMPLATE/`, to `.github/labeler.yml`, and to the table in the README.
+2. Add it to the issue form dropdowns in `.github/ISSUE_TEMPLATE/`, to `.github/labeler.yml`, and add a collapsible `<details>` block for it under *Widgets* in the README (copy the Mullvad one).
 3. Create a `widget: <name>` label.
 4. Set up releases:
    - Give its `metadata.json` a full semver `Version` such as `"0.0.0"`. release-please silently skips a version it can't parse as `x.y.z` (a plain `"1.0"` is skipped).

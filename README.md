@@ -11,7 +11,12 @@
 
 ## Widgets
 
-### Mullvad VPN
+Click a widget to see what it does and how it looks.
+
+<details>
+<summary><b>Mullvad VPN</b> — status, quick toggle and a location picker with a map</summary>
+
+<br>
 
 <p align="center">
   <img src="docs/screenshots/mullvad-hero.png" width="720" alt="Mullvad VPN widget for Plasma">
@@ -31,6 +36,8 @@ Control Mullvad VPN from the panel: see your connection at a glance, switch it o
   <img src="docs/screenshots/mullvad-details.png" width="31%" alt="Expanded connection details">
   <img src="docs/screenshots/mullvad-locations.png" width="31%" alt="Location picker">
 </p>
+
+</details>
 
 ## Install
 
