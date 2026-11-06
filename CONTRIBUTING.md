@@ -25,6 +25,10 @@ Widget code is cached by the shell, so restart it to see changes in the panel: `
 1. Put it in its own folder named after its plugin id (e.g. `org.danewrx.mullvad`).
 2. Add it to the issue form dropdowns in `.github/ISSUE_TEMPLATE/`, to `.github/labeler.yml`, and to the table in the README.
 3. Create a `widget: <name>` label.
+4. Set up releases:
+   - Give its `metadata.json` a full semver `Version` such as `"0.0.0"`. release-please silently skips a version it can't parse as `x.y.z` (a plain `"1.0"` is skipped).
+   - Add a block under `packages` in `release-please-config.json` (copy the mullvad one and change the folder and `component`) and an entry in `.release-please-manifest.json` starting at `"0.0.0"`. The workflow itself needs no changes.
+   - The first release's version then follows the commit types from `0.0.0` (`feat` → `0.1.0`). To start at `1.0.0` instead, put `Release-As: 1.0.0` as a footer in the description of that widget's first PR. Don't pin `release-as` in the config: it stays in force until removed.
 
 ## Releases
 Releases are automated with [release-please](https://github.com/googleapis/release-please), driven by the PR titles (squash-merged commits) on `main`:
@@ -37,4 +41,4 @@ Publishing to the KDE Store is still manual: the store has no documented upload 
 
 One-time setup: Repo settings → Actions → General → *Workflow permissions*: allow read and write, and tick *Allow GitHub Actions to create and approve pull requests*.
 
-Adding a widget: add a block under `packages` in `release-please-config.json` and an entry in `.release-please-manifest.json`; nothing else in the workflow changes.
+Adding a widget's release setup is step 4 of [Adding a widget](#adding-a-widget).
