@@ -338,38 +338,51 @@ PlasmoidItem {
             clip: true
 
             Rectangle { anchors.fill: parent; color: Kirigami.Theme.backgroundColor }
-            Image {
-                id: world
+            Item {
+                id: cam
                 readonly property real fit: root.pin
                     ? Math.min(360 / (Math.max(root.pin.span.lon, 1) * 1.8),
                                360 * mapView.height / (mapView.width * Math.max(root.pin.span.lat, 1) * 1.8))
                     : 4
-                readonly property real zoom: Math.max(2 * mapView.height / mapView.width + 0.01, Math.min(10, Math.max(4, fit)))
-                readonly property point px: root.pin ? Qt.point((root.pin.lon + 180) / 360 * width, (90 - root.pin.lat) / 180 * height)
-                                                     : Qt.point(width / 2, height / 2)
-                width: mapView.width * zoom
-                height: width / 2
-                x: Math.min(0, Math.max(mapView.width - width, mapView.width / 2 - px.x))
-                y: Math.min(0, Math.max(mapView.height - height, mapView.height * 0.6 - px.y))
-                source: Qt.resolvedUrl("../images/world.svg")
-                sourceSize: Qt.size(width, height)
-                opacity: 0.15
-                layer.enabled: true // the SVG is white: tint it with the theme text color
-                layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.textColor }
-            }
-            Image {
-                x: world.x; y: world.y
-                width: world.width; height: world.height
-                source: Qt.resolvedUrl("../images/borders.svg")
-                sourceSize: Qt.size(width, height)
-                opacity: 0.9
-                layer.enabled: true
-                layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.backgroundColor }
+                property real lon: root.pin ? root.pin.lon : 0
+                property real lat: root.pin ? root.pin.lat : 20
+                property real zoom: Math.max(2 * mapView.height / mapView.width + 0.01, Math.min(10, Math.max(4, fit)))
+                Behavior on lon { NumberAnimation { duration: 1400; easing.type: Easing.InOutCubic } }
+                Behavior on lat { NumberAnimation { duration: 1400; easing.type: Easing.InOutCubic } }
+                Behavior on zoom { NumberAnimation { duration: 1400; easing.type: Easing.InOutCubic } }
             }
             Item {
+                id: mapLayer
+                width: mapView.width * 10
+                height: width / 2
+                scale: cam.zoom / 10
+                transformOrigin: Item.TopLeft
+                // put the camera point at the view's focus (a little low, clear of the banner), staying inside the map
+                x: Math.min(0, Math.max(mapView.width - width * scale, mapView.width / 2 - (cam.lon + 180) / 360 * width * scale))
+                y: Math.min(0, Math.max(mapView.height - height * scale, mapView.height * 0.6 - (90 - cam.lat) / 180 * height * scale))
+                Image {
+                    anchors.fill: parent
+                    source: Qt.resolvedUrl("../images/world.svg")
+                    sourceSize: Qt.size(width, height)
+                    asynchronous: true
+                    opacity: 0.15
+                    layer.enabled: true // the SVG is white: tint it with the theme text color
+                    layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.textColor }
+                }
+                Image { // country borders: lines in the background color, so they cut thin gaps through the land
+                    anchors.fill: parent
+                    source: Qt.resolvedUrl("../images/borders.svg")
+                    sourceSize: Qt.size(width, height)
+                    asynchronous: true
+                    opacity: 0.9
+                    layer.enabled: true
+                    layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.backgroundColor }
+                }
+            }
+            Item { // pin, placed with the same transform so it rides along with the map
                 visible: root.pin !== null
-                x: world.x + world.px.x
-                y: world.y + world.px.y
+                x: root.pin ? mapLayer.x + (root.pin.lon + 180) / 360 * mapLayer.width * mapLayer.scale : 0
+                y: root.pin ? mapLayer.y + (90 - root.pin.lat) / 180 * mapLayer.height * mapLayer.scale : 0
                 Rectangle { anchors.centerIn: parent; width: Kirigami.Units.gridUnit * 3; height: width; radius: width / 2
                             color: root.stateColor; opacity: 0.3 }
                 Rectangle { anchors.centerIn: parent; width: Kirigami.Units.gridUnit * 0.9; height: width; radius: width / 2
