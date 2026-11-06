@@ -93,6 +93,12 @@ PlasmoidItem {
     // Quick toggle without opening the popup: right-click menu entry (middle-click on the icon does the same).
     Plasmoid.contextualActions: [
         PlasmaCore.Action {
+            text: i18n("Reconnect")
+            icon.name: "view-refresh"
+            visible: root.vpnState === "connected"
+            onTriggered: root.reconnect()
+        },
+        PlasmaCore.Action {
             text: root.active ? i18n("Disconnect") : i18n("Connect")
             icon.name: root.active ? "network-disconnect" : "network-connect"
             onTriggered: root.setConnected(!root.active)
@@ -174,7 +180,9 @@ PlasmoidItem {
                    : head.startsWith("disconnected") ? "disconnected"
                    : head.startsWith("blocked") ? "blocked" : "unknown"
             if (root.pending) {
-                const caughtUp = root.pending === "connect" ? (st === "connecting" || st === "connected") : st === "disconnected"
+                const caughtUp = root.pending === "disconnect" ? st === "disconnected"
+                               : root.pending === "reconnect" ? (st === "connecting" || (st === "connected" && Date.now() - root.pendingSince > 2000))
+                               : (st === "connecting" || st === "connected")
                 if (caughtUp || Date.now() - root.pendingSince > 10000) root.pending = ""
                 else st = root.vpnState // stale reading from before the daemon saw our request
             }
@@ -193,6 +201,12 @@ PlasmoidItem {
         pending = on ? "connect" : "disconnect"
         pendingSince = Date.now()
         exec.connectSource(on ? "mullvad connect" : "mullvad disconnect")
+    }
+    function reconnect() {
+        vpnState = "connecting"
+        pending = "reconnect"
+        pendingSince = Date.now()
+        exec.connectSource("mullvad reconnect")
     }
     function refresh() { exec.connectSource("mullvad status") }
     function loadRelays() { exec.connectSource("mullvad relay list"); exec.connectSource("mullvad relay get") }
@@ -301,6 +315,21 @@ PlasmoidItem {
                         onToggled: {
                             root.setConnected(checked)
                             checked = Qt.binding(() => root.active) // a click breaks the binding otherwise
+                        }
+                    }
+                    IconView { // reconnect to get a fresh connection (same relay choice)
+                        visible: root.vpnState === "connected"
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                        value: Qt.resolvedUrl("../icons/reconnect.svg").toString()
+                        tintColor: banner.fg
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -Kirigami.Units.smallSpacing
+                            hoverEnabled: true
+                            onClicked: root.reconnect()
+                            QQC2.ToolTip.text: i18n("Reconnect")
+                            QQC2.ToolTip.visible: containsMouse
                         }
                     }
                     IconView { // open the Mullvad desktop app
