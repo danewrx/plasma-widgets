@@ -1,7 +1,7 @@
 <h1 align="center">plasma-widgets</h1>
 
 <p align="center">
-  Widgets for the KDE Plasma 6 panel, built to look and feel native.
+  Collection of widgets I have created for KDE Plasma
 </p>
 
 <p align="center">
