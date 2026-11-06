@@ -1,1 +1,18 @@
 # plasma-widgets
+
+KDE Plasma 6 widgets.
+
+| Widget | What it does | Folder |
+|---|---|---|
+| Mullvad VPN | Status, quick toggle and a location picker with a map for the Mullvad VPN | [`org.danewrx.mullvad`](org.danewrx.mullvad) |
+
+## Install
+
+```bash
+kpackagetool6 -t Plasma/Applet -i <widget folder>
+```
+
+Use `-u` instead of `-i` to update. Then add the widget from the panel's *Add Widgets*.
+
+## Issues and contributing
+Please open [issues](../../issues/new/choose) using the forms, and see [CONTRIBUTING.md](CONTRIBUTING.md) for commit and PR conventions. Questions and ideas go in [Discussions](../../discussions).

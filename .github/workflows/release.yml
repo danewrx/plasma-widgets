@@ -1,0 +1,55 @@
+name: Release
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.rp.outputs.releases_created }}
+      paths_released: ${{ steps.rp.outputs.paths_released }}
+    steps:
+      # Opens/updates a "release PR" per widget (version bump + CHANGELOG); merging it tags and publishes the release.
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  package:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        widget: ${{ fromJSON(needs.release-please.outputs.paths_released) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build the .plasmoid and attach it to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WIDGET: ${{ matrix.widget }}
+        run: |
+          component=$(jq -r --arg p "$WIDGET" '.packages[$p].component' release-please-config.json)
+          tag=$(git tag --points-at HEAD | grep "^${component}-v" | head -n1)
+          file=$(scripts/package.sh "$WIDGET")
+          gh release upload "$tag" "$file" --clobber
+          {
+            echo "## Released \`$tag\`"
+            echo
+            echo "Attached: \`$(basename "$file")\`"
+            echo
+            echo "### KDE Store (manual for now)"
+            echo "1. Download the file above from the release."
+            echo "2. Open your product on https://store.kde.org, then Product → Files, and upload it."
+            echo "3. Paste the notes below into the changelog/description."
+            echo
+            echo '```markdown'
+            gh release view "$tag" --json body --jq .body
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
