@@ -35,8 +35,6 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 Publishing to the KDE Store is still manual: the store has no documented upload API yet.
 
-One-time setup:
-- Repo settings → Actions → General → *Workflow permissions*: allow read and write, and tick *Allow GitHub Actions to create and approve pull requests*.
-- After the **first** release, remove `"release-as": "1.0.0"` from `release-please-config.json`, otherwise every later release is pinned to 1.0.0.
+One-time setup: Repo settings → Actions → General → *Workflow permissions*: allow read and write, and tick *Allow GitHub Actions to create and approve pull requests*.
 
 Adding a widget: add a block under `packages` in `release-please-config.json` and an entry in `.release-please-manifest.json`; nothing else in the workflow changes.
