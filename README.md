@@ -14,7 +14,7 @@
 Click a widget to see what it does and how it looks.
 
 <details>
-<summary><h3>Mullvad VPN</h3>Status, quick toggle and a location picker with a map</summary>
+<summary><h3>Mullvad VPN</h3>&nbsp; - Plasmoid to interact with Mullvad VPN</summary>
 
 <br>
 
