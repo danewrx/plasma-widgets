@@ -1,7 +1,7 @@
 name: Labels
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
   issues:
     types: [opened]
 permissions:
@@ -26,3 +26,27 @@ jobs:
             const m = (context.payload.issue.body || "").match(/### Which widget\?\s+(\S[^\n]*)/)
             if (!m || m[1].trim() === "A new widget") return
             await github.rest.issues.addLabels({ ...context.repo, issue_number: context.issue.number, labels: [`widget: ${m[1].trim()}`] })
+  type:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Type label from the PR title's "type(scope):" prefix. Reads the title from the event payload only.
+            const map = {
+              feat: "enhancement", perf: "enhancement",
+              fix: "bug",
+              docs: "documentation",
+              chore: "maintenance", refactor: "maintenance", style: "maintenance", test: "maintenance",
+              build: "maintenance", ci: "maintenance", revert: "maintenance",
+            }
+            const m = context.payload.pull_request.title.match(/^(\w+)(?:\([^)]*\))?!?:/)
+            const want = m && map[m[1]]
+            const all = new Set(Object.values(map))
+            const have = (await github.rest.issues.listLabelsOnIssue({ ...context.repo, issue_number: context.issue.number })).data.map(l => l.name)
+            // retitling feat -> fix should swap the label, so drop any other type label first
+            for (const name of have.filter(n => all.has(n) && n !== want))
+              await github.rest.issues.removeLabel({ ...context.repo, issue_number: context.issue.number, name })
+            if (want && !have.includes(want))
+              await github.rest.issues.addLabels({ ...context.repo, issue_number: context.issue.number, labels: [want] })

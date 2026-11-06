@@ -3,6 +3,8 @@
 ## Commits and PRs
 Use `type(widget): message`, e.g. `feat(mullvad): add a reconnect button`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. The widget name is the scope. A hook enforces this locally and a check enforces it on PR titles.
 
+PRs get a type label from the title: `feat`/`perf` → `enhancement`, `fix` → `bug`, `docs` → `documentation`, and `chore`/`refactor`/`style`/`test`/`build`/`ci`/`revert` → `maintenance`. The widget label comes from the folders the PR changes.
+
 Enable the hook once per clone:
 
 ```bash
