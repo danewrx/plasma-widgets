@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in a widget is broken or looks wrong
+labels: [bug]
+body:
+  - type: dropdown
+    id: widget
+    attributes:
+      label: Which widget?
+      options:
+        - mullvad
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Widget version
+      description: Shown on the widget's About page.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Plasma version and distro
+      placeholder: Plasma 6.x, Arch Linux
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Run `journalctl --user -b | grep -i <widget name>` and paste anything relevant. Screenshots can be dropped in here too."
+      render: shell

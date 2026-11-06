@@ -1,0 +1,4 @@
+# Labels a PR from the folders it touches. Add one entry per widget.
+"widget: mullvad":
+  - changed-files:
+      - any-glob-to-any-file: org.danewrx.mullvad/**
