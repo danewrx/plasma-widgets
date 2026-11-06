@@ -5,7 +5,6 @@
     "org.danewrx.mullvad": {
       "release-type": "simple",
       "component": "mullvad",
-      "release-as": "1.0.0",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         { "type": "json", "path": "metadata.json", "jsonpath": "$.KPlugin.Version" }
