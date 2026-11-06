@@ -329,6 +329,11 @@ PlasmoidItem {
                     height: 1
                     color: Qt.alpha(banner.fg, 0.3)
                 }
+                TextMetrics {
+                    id: labelMetrics
+                    font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                    text: "Location"
+                }
                 Repeater {
                     model: root.connecting ? [] : root.detailRows
                     ColumnLayout {
@@ -340,7 +345,7 @@ PlasmoidItem {
                             Layout.fillWidth: true
                             spacing: Kirigami.Units.largeSpacing
                             QQC2.Label {
-                                Layout.preferredWidth: Kirigami.Units.gridUnit * 3.5
+                                Layout.preferredWidth: Math.ceil(labelMetrics.width) + Kirigami.Units.smallSpacing
                                 Layout.alignment: Qt.AlignTop
                                 text: modelData.k || ""
                                 elide: Text.ElideRight
@@ -351,6 +356,7 @@ PlasmoidItem {
                             QQC2.Label {
                                 Layout.fillWidth: true
                                 text: modelData.v || ""
+                                horizontalAlignment: Text.AlignRight
                                 color: banner.fg
                                 wrapMode: Text.WrapAnywhere // long hostnames have no spaces to wrap at
                                 font.bold: true

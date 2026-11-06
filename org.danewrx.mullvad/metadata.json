@@ -1,14 +1,22 @@
 {
     "KPackageStructure": "Plasma/Applet",
     "KPlugin": {
-        "Authors": [{ "Name": "danewrx" }],
+        "Authors": [
+            {
+                "Name": "Dane Buchanan (danewrx)",
+                "Website": "https://dane.gg"
+            }
+        ],
+        "BugReportUrl": "https://github.com/danewrx/plasma-widgets/issues",
         "Category": "System Information",
-        "Description": "Mullvad VPN status and connect/disconnect toggle (needs the mullvad CLI)",
-        "Icon": "security-high",
+        "Copyright": "© 2026 Dane Buchanan",
+        "Description": "Plasmoid to interact with Mullvad VPN",
+        "Icon": "mullvad-vpn",
         "Id": "org.danewrx.mullvad",
-        "License": "GPL-2.0+",
+        "License": "MIT",
         "Name": "Mullvad VPN",
-        "Version": "1.0"
+        "Version": "1.0",
+        "Website": "https://github.com/danewrx/plasma-widgets"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }
