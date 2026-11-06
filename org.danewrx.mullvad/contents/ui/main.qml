@@ -350,6 +350,15 @@ PlasmoidItem {
                 layer.enabled: true // the SVG is white: tint it with the theme text color
                 layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.textColor }
             }
+            Image {
+                x: world.x; y: world.y
+                width: world.width; height: world.height
+                source: Qt.resolvedUrl("../images/borders.svg")
+                sourceSize: Qt.size(width, height)
+                opacity: 0.9
+                layer.enabled: true
+                layer.effect: MultiEffect { brightness: 1.0; colorization: 1.0; colorizationColor: Kirigami.Theme.backgroundColor }
+            }
             Item {
                 visible: root.pin !== null
                 x: world.x + world.px.x
