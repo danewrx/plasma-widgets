@@ -70,9 +70,16 @@ PlasmoidItem {
                 Kirigami.Theme.neutralTextColor, Kirigami.Theme.highlightColor, Kirigami.Theme.linkColor,
                 Kirigami.Theme.disabledTextColor][i]
     }
-    readonly property color stateColor: cfg.colorMode === 0 ? (active ? "#1f8a3b" : "#da4453")
-                                      : cfg.colorMode === 1 ? systemColor(active ? cfg.activeSystem : cfg.inactiveSystem)
-                                      : (active ? cfg.activeColor : cfg.inactiveColor)
+    // Perceived brightness (0..1): HSL lightness calls pure yellow "dark", this does not.
+    function luminance(c) { return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b }
+    function readableOn(bg) { return luminance(bg) > 0.55 ? "black" : "white" }
+    // mode: 0 green/red, 1 theme colors (the theme's positive/negative unless overridden), 2 custom
+    function stateColorFor(mode, override, activeSystem, inactiveSystem, activeCustom, inactiveCustom) {
+        return mode === 0 ? (active ? "#1f8a3b" : "#da4453")
+             : mode === 1 ? systemColor(override ? (active ? activeSystem : inactiveSystem) : (active ? 1 : 2))
+             : (active ? activeCustom : inactiveCustom)
+    }
+    readonly property color stateColor: stateColorFor(cfg.colorMode, cfg.themeOverride, cfg.activeSystem, cfg.inactiveSystem, cfg.activeColor, cfg.inactiveColor)
 
     toolTipMainText: "Mullvad: " + vpnState
     toolTipSubText: detail || lastError
@@ -177,10 +184,21 @@ PlasmoidItem {
             height: implicitHeight
             implicitHeight: bannerContent.implicitHeight + Kirigami.Units.largeSpacing * 2
             Behavior on implicitHeight { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } } // dropdown
-            color: root.stateColor
+            color: root.cfg.fillBanner ? root.stateColor : Kirigami.Theme.alternateBackgroundColor
             clip: true
-            // black or white text, whichever reads on the chosen color
-            readonly property color fg: color.hslLightness > 0.6 ? "black" : "white"
+            // text color: black/white whichever reads on a filled banner, else the theme's
+            readonly property color fg: root.cfg.fillBanner ? root.readableOn(color) : Kirigami.Theme.textColor
+            // what carries the state when the banner is not filled
+            // (an accent too close to the banner's own color would vanish, so fall back to the text color)
+            readonly property color accent: root.cfg.fillBanner ? fg
+                : Math.abs(root.luminance(root.stateColor) - root.luminance(color)) > 0.25 ? root.stateColor : Kirigami.Theme.textColor
+            Rectangle { // edge line, only needed when the banner is a neutral theme color
+                visible: !root.cfg.fillBanner
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: 1
+                z: 3
+                color: Qt.alpha(Kirigami.Theme.textColor, 0.2)
+            }
             // loading sweep, only while connecting
             Rectangle {
                 id: sweep
@@ -213,7 +231,7 @@ PlasmoidItem {
                         value: root.iconValue
                         fallback: root.iconFallback
                         tint: root.cfg.tintIcons
-                        tintColor: banner.fg
+                        tintColor: banner.accent
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
@@ -228,7 +246,7 @@ PlasmoidItem {
                         }
                         QQC2.Label {
                             text: root.vpnState.charAt(0).toUpperCase() + root.vpnState.slice(1) + (root.connecting ? "…" : "")
-                            color: banner.fg
+                            color: banner.accent
                             opacity: 0.85
                         }
                     }
