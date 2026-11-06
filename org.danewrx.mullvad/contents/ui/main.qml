@@ -99,8 +99,18 @@ PlasmoidItem {
         Qt.callLater(() => { root.expanded = wasExpanded })
     }
 
-    toolTipMainText: "Mullvad: " + vpnState
-    toolTipSubText: detail || lastError
+    function escapeHtml(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }
+    readonly property string tooltipRows: {
+        if (connecting) return ""
+        const rows = detailRows.filter(r => r.k !== undefined).map(r => [r.k, r.v])
+        if (featureChips.length) rows.push([i18n("Features"), featureChips.join(", ")])
+        if (!rows.length) return lastError ? escapeHtml(lastError) : ""
+        return "<table cellspacing='3'>" + rows.map(r =>
+            "<tr><td><b>" + escapeHtml(r[0]) + "</b>&nbsp;&nbsp;</td><td>" + escapeHtml(r[1]) + "</td></tr>").join("") + "</table>"
+    }
+    toolTipTextFormat: Text.RichText
+    toolTipMainText: "Mullvad VPN — " + vpnState.charAt(0).toUpperCase() + vpnState.slice(1) + (connecting ? "…" : "")
+    toolTipSubText: tooltipRows
 
     P5Support.DataSource {
         id: exec
