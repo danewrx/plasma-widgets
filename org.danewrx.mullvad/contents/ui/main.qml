@@ -47,6 +47,7 @@ PlasmoidItem {
     }
     property string pending: ""
     property double pendingSince: 0
+    property string guiPath: ""           // Mullvad desktop app, empty if not installed
     property bool picking: false          // popup shows the location list instead of the map
     // Where to put the map pin: the relay's city when connected, else the middle of the visible country.
     readonly property var pin: {
@@ -83,6 +84,7 @@ PlasmoidItem {
         onNewData: (source, data) => {
             disconnectSource(source)
             const out = (data["stdout"] || "").trim()
+            if (source.startsWith("command -v")) { root.guiPath = out.split("\n")[0]; return }
             if (source === "mullvad relay list") {
                 // Countries are unindented ("Albania (al)"), cities one tab in ("\tTirana (tia) @ ..."),
                 // servers two tabs in (ignored).
@@ -235,6 +237,25 @@ PlasmoidItem {
                         onToggled: {
                             root.setConnected(checked)
                             checked = Qt.binding(() => root.active) // a click breaks the binding otherwise
+                        }
+                    }
+                    IconView { // open the Mullvad desktop app
+                        visible: root.guiPath !== ""
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                        value: Qt.resolvedUrl("../icons/open.svg").toString()
+                        tintColor: banner.fg
+                        MouseArea {
+                            id: openArea
+                            anchors.fill: parent
+                            anchors.margins: -Kirigami.Units.smallSpacing
+                            hoverEnabled: true
+                            onClicked: {
+                                exec.connectSource("setsid -f '" + root.guiPath + "' >/dev/null 2>&1")
+                                root.expanded = false
+                            }
+                            QQC2.ToolTip.text: i18n("Open the Mullvad app")
+                            QQC2.ToolTip.visible: containsMouse
                         }
                     }
                 }
@@ -476,5 +497,8 @@ PlasmoidItem {
         }
     }
 
-    Component.onCompleted: loadRelays()
+    Component.onCompleted: {
+        loadRelays()
+        exec.connectSource("command -v mullvad-vpn || command -v mullvad-gui")
+    }
 }
