@@ -87,7 +87,12 @@ The shell caches widget code, so if a panel instance doesn't pick up an update, 
 
 ## Issues and contributing
 
-Found a bug or want a feature? Open an [issue](../../issues/new/choose) using the forms. Questions and ideas go in [Discussions](../../discussions). To contribute, read [CONTRIBUTING.md](CONTRIBUTING.md) for the commit and PR conventions, how to test a widget, and how releases work.
+| I want to… | Go to |
+|---|---|
+| Report a bug | [Bug report form](../../issues/new?template=bug_report.yml) |
+| Suggest a feature | [Feature request form](../../issues/new?template=feature_request.yml) |
+| Ask a question or share an idea | [Discussions](../../discussions) |
+| Contribute code | [CONTRIBUTING.md](CONTRIBUTING.md): commit and PR conventions, testing a widget, and how releases work |
 
 ## License
 
