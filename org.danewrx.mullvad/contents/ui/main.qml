@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Effects
 import QtQuick.Layouts
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
@@ -80,6 +81,23 @@ PlasmoidItem {
              : (active ? activeCustom : inactiveCustom)
     }
     readonly property color stateColor: stateColorFor(cfg.colorMode, cfg.themeOverride, cfg.activeSystem, cfg.inactiveSystem, cfg.activeColor, cfg.inactiveColor)
+
+    // Quick toggle without opening the popup: right-click menu entry (middle-click on the icon does the same).
+    Plasmoid.contextualActions: [
+        PlasmaCore.Action {
+            text: root.active ? i18n("Disconnect") : i18n("Connect")
+            icon.name: root.active ? "network-disconnect" : "network-connect"
+            onTriggered: root.setConnected(!root.active)
+        }
+    ]
+
+    // The widget's keyboard shortcut ("Activate widget" in its Keyboard Shortcuts page) toggles the VPN. Plasma may
+    // also toggle the popup by itself on activation, so the popup state is put back explicitly afterwards.
+    Plasmoid.onActivated: {
+        const wasExpanded = root.expanded
+        root.setConnected(!root.active)
+        Qt.callLater(() => { root.expanded = wasExpanded })
+    }
 
     toolTipMainText: "Mullvad: " + vpnState
     toolTipSubText: detail || lastError
@@ -511,7 +529,11 @@ PlasmoidItem {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: root.expanded = !root.expanded
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            onClicked: mouse => {
+                if (mouse.button === Qt.MiddleButton) root.setConnected(!root.active)
+                else root.expanded = !root.expanded
+            }
         }
     }
 
