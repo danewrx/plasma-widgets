@@ -96,8 +96,11 @@ PlasmoidItem {
                 }
                 // shortcut: a plain average of a country's cities, wrong only for countries spanning the 180° meridian.
                 for (const c of list) {
-                    const n = c.cities.length || 1
-                    c.center = { lat: c.cities.reduce((a, x) => a + x.lat, 0) / n, lon: c.cities.reduce((a, x) => a + x.lon, 0) / n }
+                    const n = c.cities.length || 1, lons = c.cities.map(x => x.lon), lats = c.cities.map(x => x.lat)
+                    const span = c.cities.length ? { lon: Math.max(...lons) - Math.min(...lons), lat: Math.max(...lats) - Math.min(...lats) }
+                                                 : { lon: 1, lat: 1 }
+                    c.center = { lat: lats.reduce((a, x) => a + x, 0) / n, lon: lons.reduce((a, x) => a + x, 0) / n, span: span }
+                    for (const city of c.cities) city.span = span
                 }
                 root.countries = list
                 return
@@ -337,7 +340,11 @@ PlasmoidItem {
             Rectangle { anchors.fill: parent; color: Kirigami.Theme.backgroundColor }
             Image {
                 id: world
-                readonly property real zoom: Math.max(4, 2 * mapView.height / mapView.width + 0.01)
+                readonly property real fit: root.pin
+                    ? Math.min(360 / (Math.max(root.pin.span.lon, 1) * 1.8),
+                               360 * mapView.height / (mapView.width * Math.max(root.pin.span.lat, 1) * 1.8))
+                    : 4
+                readonly property real zoom: Math.max(2 * mapView.height / mapView.width + 0.01, Math.min(10, Math.max(4, fit)))
                 readonly property point px: root.pin ? Qt.point((root.pin.lon + 180) / 360 * width, (90 - root.pin.lat) / 180 * height)
                                                      : Qt.point(width / 2, height / 2)
                 width: mapView.width * zoom
