@@ -49,6 +49,14 @@ PlasmoidItem {
     property string pending: ""
     property double pendingSince: 0
     property string guiPath: ""           // Mullvad desktop app, empty if not installed
+    property string problem: ""           // "" | "missing" (no mullvad CLI) | "stopped" (daemon not running) | "error"
+    readonly property string problemTitle: problem === "missing" ? i18n("Mullvad CLI not found")
+                                         : problem === "stopped" ? i18n("Mullvad service isn't running")
+                                         : problem ? i18n("Couldn't read the Mullvad status") : ""
+    readonly property string problemText: problem === "missing"
+            ? i18n("This widget needs the mullvad command-line tool. Install the Mullvad VPN package, then retry.")
+            : problem === "stopped" ? i18n("Start the service with:\nsudo systemctl enable --now mullvad-daemon")
+            : lastError
     property bool picking: false          // popup shows the location list instead of the map
     // Where to put the map pin: the relay's city when connected, else the middle of the visible country.
     readonly property var pin: {
@@ -109,8 +117,8 @@ PlasmoidItem {
             "<tr><td><b>" + escapeHtml(r[0]) + "</b>&nbsp;&nbsp;</td><td>" + escapeHtml(r[1]) + "</td></tr>").join("") + "</table>"
     }
     toolTipTextFormat: Text.RichText
-    toolTipMainText: "Mullvad VPN — " + vpnState.charAt(0).toUpperCase() + vpnState.slice(1) + (connecting ? "…" : "")
-    toolTipSubText: tooltipRows
+    toolTipMainText: problem ? problemTitle : "Mullvad VPN — " + vpnState.charAt(0).toUpperCase() + vpnState.slice(1) + (connecting ? "…" : "")
+    toolTipSubText: problem ? escapeHtml(problemText).replace(/\n/g, "<br>") : tooltipRows
 
     P5Support.DataSource {
         id: exec
@@ -151,6 +159,15 @@ PlasmoidItem {
             if (source !== "mullvad status") { refresh(); loadRelays(); return }
             const err = (data["stderr"] || "").toString().trim()
             root.lastError = err || (data["exit code"] ? "exit " + data["exit code"] : "")
+            const code = data["exit code"]
+            if (code === 127 || /not found/i.test(err)) root.problem = "missing"
+            else if (code) root.problem = /Management RPC|transport error|daemon/i.test(err) ? "stopped" : "error"
+            else root.problem = ""
+            if (root.problem) {
+                root.vpnState = "unknown"; root.pending = ""; root.detail = ""; root.relay = ""; root.visibleLocation = ""
+                if (root.problem === "error") root.lastError = err.split("\n")[0]
+                return
+            }
             const head = out.split("\n")[0].toLowerCase()
             let st = head.startsWith("connected") ? "connected"
                    : head.startsWith("connecting") ? "connecting"
@@ -207,6 +224,7 @@ PlasmoidItem {
         // ---- banner: switch + every detail from `mullvad status` ----
         Rectangle {
             id: banner
+            visible: root.problem === ""
             anchors { top: parent.top; left: parent.left; right: parent.right }
             z: 2
             height: implicitHeight
@@ -398,9 +416,24 @@ PlasmoidItem {
             }
         }
 
+        Kirigami.PlaceholderMessage {
+            visible: root.problem !== ""
+            anchors.centerIn: parent
+            width: parent.width - Kirigami.Units.gridUnit * 2
+            icon.name: "dialog-warning"
+            text: root.problemTitle
+            explanation: root.problemText
+            helpfulAction: Kirigami.Action {
+                text: i18n("Retry")
+                icon.name: "view-refresh"
+                onTriggered: root.refresh()
+            }
+        }
+
         // ---- map, with the location list sliding up over it ----
         Item {
             id: mapView
+            visible: root.problem === ""
             anchors { top: parent.top; left: parent.left; right: parent.right; bottom: switchButton.top }
             clip: true
 
@@ -509,6 +542,7 @@ PlasmoidItem {
 
         QQC2.Button {
             id: switchButton
+            visible: root.problem === ""
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: Kirigami.Units.smallSpacing }
             text: root.picking ? i18n("Close") : i18n("Switch location")
             icon.name: root.picking ? "go-down" : "go-up"
@@ -532,7 +566,7 @@ PlasmoidItem {
             height: width
             value: root.iconValue
             fallback: root.iconFallback
-            opacity: root.vpnState === "connecting" ? 0.5 : 1.0
+            opacity: root.problem ? 0.4 : root.vpnState === "connecting" ? 0.5 : 1.0
             tint: root.cfg.tintIcons
             tintColor: root.stateColor
         }
