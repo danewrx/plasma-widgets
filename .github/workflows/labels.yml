@@ -1,0 +1,28 @@
+name: Labels
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+jobs:
+  pr:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      # Only reads the list of changed files from the API; it never checks out or runs PR code.
+      - uses: actions/labeler@v5
+  issue:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // The issue form puts the dropdown answer under "### Which widget?"
+            const m = (context.payload.issue.body || "").match(/### Which widget\?\s+(\S[^\n]*)/)
+            if (!m || m[1].trim() === "A new widget") return
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: context.issue.number, labels: [`widget: ${m[1].trim()}`] })
