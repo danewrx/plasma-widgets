@@ -33,7 +33,7 @@ The widget makes no network requests of its own. Everything goes through the `mu
 > Installing from the KDE Store is recommended.
 
 <details>
-<summary><h3>KDE Store</h3></summary>
+<summary><b>KDE Store</b></summary>
 
 Right-click your panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for "Mullvad VPN" and click **Install**, then add it to the panel.
 <!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
@@ -41,7 +41,7 @@ Right-click your panel → **Add Widgets…** → **Get New Widgets…** → **D
 </details>
 
 <details>
-<summary><h3>Manual, from a release</h3></summary>
+<summary><b>Manual, from a release</b></summary>
 
 Download `org.danewrx.mullvad-<version>.plasmoid` from the [Releases](../../../releases) page, then:
 
@@ -54,7 +54,7 @@ Right-click your panel → **Add Widgets** → search for "Mullvad VPN".
 </details>
 
 <details>
-<summary><h3>From source</h3></summary>
+<summary><b>From source</b></summary>
 
 Clone the repo and run this from its root:
 

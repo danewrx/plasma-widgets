@@ -14,7 +14,7 @@
 Click a widget to see what it does and how it looks.
 
 <details>
-<summary><h3>Mullvad VPN</h3>&nbsp; - Plasmoid to interact with Mullvad VPN</summary>
+<summary><b>Mullvad VPN</b> - Plasmoid to interact with Mullvad VPN</summary>
 
 <br>
 
@@ -45,7 +45,7 @@ Control Mullvad VPN from the panel: see your connection at a glance, switch it o
 > Installing from the KDE Store is recommended.
 
 <details>
-<summary><h3>KDE Store</h3></summary>
+<summary><b>KDE Store</b></summary>
 
 Right-click the panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for the widget by name and click **Install**.
 <!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
@@ -53,7 +53,7 @@ Right-click the panel → **Add Widgets…** → **Get New Widgets…** → **Do
 </details>
 
 <details>
-<summary><h3>Manual, from a release</h3></summary>
+<summary><b>Manual, from a release</b></summary>
 
 Download the `.plasmoid` file for a widget from the [Releases](../../releases) page, then:
 
@@ -66,7 +66,7 @@ Right-click the panel → **Add Widgets**, and search for the widget by name.
 </details>
 
 <details>
-<summary><h3>From source</h3></summary>
+<summary><b>From source</b></summary>
 
 Clone this repo and point the command at the widget's folder:
 
