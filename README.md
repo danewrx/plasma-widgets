@@ -94,6 +94,17 @@ The shell caches widget code, so if a panel instance doesn't pick up an update, 
 | Ask a question or share an idea | [Discussions](../../discussions) |
 | Contribute code | [CONTRIBUTING.md](CONTRIBUTING.md): commit and PR conventions, testing a widget, and how releases work |
 
+## Support
+
+These widgets are free and open source. If you find one useful, you can support its development:
+
+<p>
+  <a href="https://github.com/sponsors/danewrx"><img alt="Sponsor on GitHub" src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white"></a>
+  <a href="https://ko-fi.com/danewrx"><img alt="Support on Ko-fi" src="https://img.shields.io/badge/Support-Ko--fi-ff5e5b?logo=kofi&logoColor=white"></a>
+</p>
+
+Starring the repo and reporting bugs help just as much!
+
 ## License
 
 [MIT](LICENSE)
