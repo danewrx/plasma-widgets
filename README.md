@@ -14,7 +14,7 @@
 Click a widget to see what it does and how it looks.
 
 <details>
-<summary><b>Mullvad VPN</b> — status, quick toggle and a location picker with a map</summary>
+<summary><h3>Mullvad VPN</h3>Status, quick toggle and a location picker with a map</summary>
 
 <br>
 
@@ -41,10 +41,14 @@ Control Mullvad VPN from the panel: see your connection at a glance, switch it o
 
 ## Install
 
-**From the KDE Store (easiest).** Right-click the panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for the widget by name and click **Install**.
+### KDE Store (recommended)
+
+Right-click the panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for the widget by name and click **Install**.
 <!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
 
-**From a release.** Download the `.plasmoid` file for a widget from the [Releases](../../releases) page, then:
+### Manual, from a release
+
+Download the `.plasmoid` file for a widget from the [Releases](../../releases) page, then:
 
 ```bash
 kpackagetool6 -t Plasma/Applet -i <file>.plasmoid
@@ -52,12 +56,22 @@ kpackagetool6 -t Plasma/Applet -i <file>.plasmoid
 
 Right-click the panel → **Add Widgets**, and search for the widget by name.
 
+### From source
+
+Clone this repo and point the command at the widget's folder:
+
+```bash
+kpackagetool6 -t Plasma/Applet -i <widget folder>
+```
+
+### Update and remove
+
 | | Command |
 |---|---|
-| Update | `kpackagetool6 -t Plasma/Applet -u <file>.plasmoid` |
+| Update | `kpackagetool6 -t Plasma/Applet -u <file or folder>` |
 | Remove | `kpackagetool6 -t Plasma/Applet -r <widget id>` (e.g. `org.danewrx.mullvad`) |
 
-To install from a clone of this repo instead, point `-i` or `-u` at the widget's folder. The shell caches widget code, so if a panel instance doesn't pick up an update, restart it with `systemctl --user restart plasma-plasmashell`.
+The shell caches widget code, so if a panel instance doesn't pick up an update, restart it with `systemctl --user restart plasma-plasmashell`.
 
 ## Issues and contributing
 
