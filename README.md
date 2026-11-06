@@ -1,4 +1,4 @@
-<h1 align="center">plasma-widgets</h1>
+<h1 align="center"><img src="docs/kde-logo.svg" height="40" alt="KDE logo">&nbsp; Plasma Widgets</h1>
 
 <p align="center">
   Collection of widgets I have created for KDE Plasma
