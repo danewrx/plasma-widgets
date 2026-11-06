@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <!-- Empty icon path = use the bundled lock/unlock. -->
+    <entry name="lockIcon" type="String"><default></default></entry>
+    <entry name="unlockIcon" type="String"><default></default></entry>
+    <entry name="iconScale" type="Int"><default>100</default><min>10</min><max>200</max></entry>
+    <entry name="themeOverride" type="Bool"><default>false</default></entry>
+    <!-- false: only the icon, status text and pin take the state color; true: the whole banner does -->
+    <entry name="fillBanner" type="Bool"><default>false</default></entry>
+    <entry name="tintIcons" type="Bool"><default>true</default></entry>
+    <entry name="activeColor" type="Color"><default>#1f8a3b</default></entry>
+    <entry name="inactiveColor" type="Color"><default>#da4453</default></entry>
+    <!-- 0 = green/red, 1 = theme colors (default; "Theme default" = the theme's positive/negative), 2 = custom -->
+    <entry name="colorMode" type="Int"><default>1</default><min>0</min><max>2</max></entry>
+    <!-- index into the system color list (see configAppearance.qml / main.qml) -->
+    <entry name="activeSystem" type="Int"><default>1</default><min>0</min><max>6</max></entry>
+    <entry name="inactiveSystem" type="Int"><default>2</default><min>0</min><max>6</max></entry>
+  </group>
+</kcfg>
