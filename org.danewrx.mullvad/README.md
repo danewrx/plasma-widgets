@@ -30,8 +30,15 @@ The widget makes no network requests of its own. Everything goes through the `mu
 ## Installation
 
 > [!TIP]
-> **KDE Store (recommended).** Right-click your panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for "Mullvad VPN" and click **Install**, then add it to the panel.
-> <!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
+> Installing from the KDE Store is recommended.
+
+<details>
+<summary><h3>KDE Store</h3></summary>
+
+Right-click your panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for "Mullvad VPN" and click **Install**, then add it to the panel.
+<!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
+
+</details>
 
 <details>
 <summary><h3>Manual, from a release</h3></summary>
