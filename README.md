@@ -48,7 +48,8 @@ Control Mullvad VPN from the panel: see your connection at a glance, switch it o
 <summary><b>KDE Store</b></summary>
 
 Right-click the panel → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma Widgets…**, search for the widget by name and click **Install**.
-<!-- Once the product is live, add its link here: [store.kde.org listing](https://store.kde.org/p/XXXXXXX) -->
+
+Or get it from the [KDE Store listing](https://store.kde.org/p/2381258/).
 
 </details>
 
