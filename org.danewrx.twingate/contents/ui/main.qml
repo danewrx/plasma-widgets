@@ -23,9 +23,21 @@ PlasmoidItem {
                                   : link === "offline" ? i18n("Offline")
                                   : link === "missing" ? i18n("Twingate CLI not found")
                                   : statusText || i18n("Unknown")
-    readonly property color stateColor: online ? Kirigami.Theme.positiveTextColor
-                                      : link === "stopped" || link === "offline" ? Kirigami.Theme.negativeTextColor
-                                      : Kirigami.Theme.disabledTextColor
+    readonly property var cfg: Plasmoid.configuration
+    // Order matches StateColorForm.qml.
+    function systemColor(i) {
+        return [Kirigami.Theme.textColor, Kirigami.Theme.positiveTextColor, Kirigami.Theme.negativeTextColor,
+                Kirigami.Theme.neutralTextColor, Kirigami.Theme.highlightColor, Kirigami.Theme.linkColor,
+                Kirigami.Theme.disabledTextColor][i]
+    }
+    // Unknown / missing is neither on nor off, so it stays grey whatever the mode.
+    readonly property color stateColor: {
+        if (link !== "online" && link !== "stopped" && link !== "offline") return Kirigami.Theme.disabledTextColor
+        const on = online
+        return cfg.colorMode === 0 ? (on ? "#1f8a3b" : "#da4453")
+             : cfg.colorMode === 1 ? systemColor(cfg.themeOverride ? (on ? cfg.activeSystem : cfg.inactiveSystem) : (on ? 1 : 2))
+             : (on ? cfg.activeColor : cfg.inactiveColor)
+    }
 
     toolTipMainText: "Twingate — " + title
     toolTipSubText: online && networkName ? networkName : ""
@@ -103,12 +115,11 @@ PlasmoidItem {
 
         RowLayout {
             Layout.margins: Kirigami.Units.largeSpacing
-            Kirigami.Icon {
-                source: root.online ? "network-vpn" : "network-vpn-disconnected"
+            IconView {
+                value: Qt.resolvedUrl("../icons/twingate.svg").toString()
                 Layout.preferredWidth: Kirigami.Units.iconSizes.medium
                 Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-                isMask: true
-                color: root.linkColor
+                tintColor: root.stateColor
             }
             ColumnLayout {
                 Layout.fillWidth: true
@@ -187,11 +198,14 @@ PlasmoidItem {
     compactRepresentation: Item {
         Layout.minimumWidth: Kirigami.Units.iconSizes.small
         Layout.minimumHeight: Kirigami.Units.iconSizes.small
-        Kirigami.Icon {
-            anchors.fill: parent
-            source: root.online ? "network-vpn" : "network-vpn-disconnected"
-            isMask: true
-            color: root.linkColor
+        Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+        Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+        IconView {
+            anchors.centerIn: parent
+            width: Math.min(parent.width, parent.height) * root.cfg.iconScale / 100 // 100% = the full slot
+            height: width
+            value: Qt.resolvedUrl("../icons/twingate.svg").toString()
+            tintColor: root.stateColor
             opacity: root.pending ? 0.5 : 1
         }
         MouseArea {
