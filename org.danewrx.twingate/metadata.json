@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Dane Buchanan (danewrx)",
+                "Website": "https://dane.gg"
+            }
+        ],
+        "BugReportUrl": "https://github.com/danewrx/plasma-widgets/issues",
+        "Category": "System Information",
+        "Copyright": "© 2026 Dane Buchanan",
+        "Description": "Plasmoid to interact with the Twingate Linux client",
+        "Icon": "network-vpn",
+        "Id": "org.danewrx.twingate",
+        "License": "MIT",
+        "Name": "Twingate",
+        "Version": "0.0.0",
+        "Website": "https://github.com/danewrx/plasma-widgets"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

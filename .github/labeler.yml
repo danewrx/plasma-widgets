@@ -2,3 +2,6 @@
 "widget: mullvad":
   - changed-files:
       - any-glob-to-any-file: org.danewrx.mullvad/**
+"widget: twingate":
+  - changed-files:
+      - any-glob-to-any-file: org.danewrx.twingate/**
