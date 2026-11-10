@@ -101,7 +101,7 @@ PlasmoidItem {
                     const j = JSON.parse(out)
                     root.items = j.resources || []
                     root.networkName = j.network_name || ""
-                    root.host = (j.admin_url || "").replace(/^https?:\/\//, "").replace(/^([^.]+)\.[a-z]{2}\d+\./, "$1.")
+                    root.host = (j.admin_url || "").replace(/^https?:\/\//, "")
                 } catch (e) { /* the daemon answers plain text ("Offline") while not connected */ }
             } else if (source === root.upCmd) {
                 root.upSince = (parseInt(out) || 0) * 1000
