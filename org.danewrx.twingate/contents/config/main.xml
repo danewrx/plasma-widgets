@@ -4,6 +4,11 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
+    <!-- What a left-click on the panel icon does: 0 = open the popup (middle-click connects / disconnects),
+         1 = connect / disconnect (middle-click opens the popup) -->
+    <entry name="clickAction" type="Int"><default>0</default><min>0</min><max>1</max></entry>
+    <!-- false: middle-click does nothing -->
+    <entry name="middleClick" type="Bool"><default>true</default></entry>
     <entry name="iconScale" type="Int"><default>100</default><min>10</min><max>200</max></entry>
     <entry name="themeOverride" type="Bool"><default>false</default></entry>
     <entry name="activeColor" type="Color"><default>#1f8a3b</default></entry>

@@ -453,8 +453,11 @@ PlasmoidItem {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            // The setting swaps the two: left-click opens the popup and middle-click toggles, or the other way round.
             onClicked: mouse => {
-                if (mouse.button === Qt.MiddleButton) root.setOnline(!root.active)
+                if (mouse.button === Qt.MiddleButton && !root.cfg.middleClick) return
+                const toggle = (mouse.button === Qt.MiddleButton) === (root.cfg.clickAction === 0)
+                if (toggle) root.setOnline(!root.active)
                 else root.expanded = !root.expanded
             }
         }
