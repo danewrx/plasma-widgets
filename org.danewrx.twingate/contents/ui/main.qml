@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
+import QtQuick.Effects
 import QtQuick.Layouts
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
@@ -9,7 +10,8 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
     id: root
 
-    property string link:  "unknown"   // online | offline | stopped | missing | unknown
+    property string link:  "unknown"   // online | auth | offline | stopped | missing | unknown
+    property string authUrl: ""        // sign-in page from `twingate status -v` while link is "auth"
     property string statusText: ""     // first line of `twingate status`, e.g. "Online: User"
     property var items:     []         // from `twingate-notifier resources` (JSON), only while online
     property string networkName: ""
@@ -27,7 +29,9 @@ PlasmoidItem {
     property string lastError: ""
 
     readonly property bool online: link === "online"
+    readonly property bool active: link === "online" || link === "auth" // the service is running (signed in or waiting for sign-in)
     readonly property string title: link === "online" ? i18n("Connected (Enabled)")
+                                  : link === "auth" ? i18n("Sign-in required")
                                   : link === "stopped" ? i18n("Disconnected (Disabled)")
                                   : link === "offline" ? i18n("Disconnected")
                                   : link === "missing" ? i18n("Twingate CLI not found")
@@ -41,6 +45,7 @@ PlasmoidItem {
     }
     // Unknown / missing is neither on nor off, so it stays grey whatever the mode.
     readonly property color stateColor: {
+        if (link === "auth") return Kirigami.Theme.neutralTextColor // waiting on you, neither on nor off
         if (link !== "online" && link !== "stopped" && link !== "offline") return Kirigami.Theme.disabledTextColor
         const on = online
         return cfg.colorMode === 0 ? (on ? "#1f8a3b" : "#da4453")
@@ -53,10 +58,10 @@ PlasmoidItem {
 
     Plasmoid.contextualActions: [
         PlasmaCore.Action {
-            text: root.online ? i18n("Disconnect") : i18n("Connect")
-            icon.name: root.online ? "network-disconnect" : "network-connect"
+            text: root.active ? i18n("Disconnect") : i18n("Connect")
+            icon.name: root.active ? "network-disconnect" : "network-connect"
             enabled: root.link !== "missing"
-            onTriggered: root.setOnline(!root.online)
+            onTriggered: root.setOnline(!root.active)
         }
     ]
 
@@ -68,19 +73,23 @@ PlasmoidItem {
             disconnectSource(source)
             const out = (data["stdout"] || "").trim()
             const code = data["exit code"]
-            if (source === "twingate status") {
+            if (source === root.statusCmd) {
                 root.lastError = ""
                 const head = out.split("\n")[0], low = head.toLowerCase()
                 let st = code === 127 ? "missing"
                        : low.startsWith("online") ? "online"
+                       : low.startsWith("authenticating") ? "auth"
                        : low.startsWith("not-running") ? "stopped"
                        : low.startsWith("offline") ? "offline" : "unknown"
                 if (root.pending) {
-                    const caughtUp = root.pending === "start" ? st === "online" : st === "stopped"
+                    const caughtUp = root.pending === "start" ? (st === "online" || st === "auth") : st === "stopped"
                     // pkexec cancelled or failed: give up after a while and show the real state
                     if (caughtUp || Date.now() - root.pendingSince > 15000) root.pending = ""
                     else st = root.link
                 }
+                // Only ever open a twingate.com sign-in page, whatever the CLI prints.
+                const url = out.match(/https:\/\/[a-z0-9.-]+\.twingate\.com\/\S*/i)
+                root.authUrl = st === "auth" && url ? url[0] : ""
                 root.link = st
                 root.statusText = head
                 if (st === "online" && !root.upSince) exec.connectSource(root.upCmd)
@@ -141,7 +150,8 @@ PlasmoidItem {
         xhr.open("GET", url)
         xhr.send()
     }
-    function refresh() { exec.connectSource("twingate status") }
+    readonly property string statusCmd: "twingate status -v"
+    function refresh() { exec.connectSource(statusCmd) }
     function refreshResources() { exec.connectSource("twingate-notifier resources") }
     // `twingate start/stop` just run `sudo systemctl`, which cannot prompt from here; pkexec shows a KDE dialog instead.
     function setOnline(on) {
@@ -170,6 +180,12 @@ PlasmoidItem {
     fullRepresentation: Item {
         Layout.preferredWidth: Kirigami.Units.gridUnit * 18
         Layout.preferredHeight: Kirigami.Units.gridUnit * 26
+        Kirigami.Action {
+            id: signInAction
+            text: i18n("Open sign-in page")
+            icon.name: "internet-services"
+            onTriggered: Qt.openUrlExternally(root.authUrl)
+        }
         ColumnLayout {
             anchors.fill: parent
             spacing: 0
@@ -177,12 +193,44 @@ PlasmoidItem {
             Rectangle {
                 id: banner
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
+                clip: true
                 implicitHeight: bannerContent.implicitHeight + Kirigami.Units.gridUnit * 1.8
                 color: Kirigami.Theme.alternateBackgroundColor
                 Rectangle { // edge line
                     anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                     height: 1
                     color: Qt.alpha(Kirigami.Theme.textColor, 0.2)
+                }
+                Item {
+                    anchors.fill: parent
+                    Repeater {
+                        model: 3
+                        Rectangle {
+                            id: blob
+                            readonly property real size: banner.height * (0.9 + Math.random() * 0.7)
+                            width: size; height: size; radius: size / 2
+                            x: Math.random() * banner.width - size / 2
+                            y: Math.random() * banner.height - size / 2
+                            color: Qt.alpha(root.stateColor, 0.07)
+                            layer.enabled: true
+                            layer.effect: MultiEffect { blurEnabled: true; blur: 1.0; blurMax: 64 }
+                            function drift() {
+                                ax.to = Math.random() * banner.width - size / 2
+                                ay.to = Math.random() * banner.height - size / 2
+                                ax.duration = ay.duration = 3500 + Math.random() * 4500
+                                ax.restart(); ay.restart()
+                            }
+                            NumberAnimation { id: ax; target: blob; property: "x"; easing.type: Easing.InOutSine }
+                            NumberAnimation { id: ay; target: blob; property: "y"; easing.type: Easing.InOutSine
+                                              onFinished: if (root.expanded) blob.drift() }
+                            Connections {
+                                target: root
+                                function onExpandedChanged() { if (root.expanded) blob.drift(); else { ax.stop(); ay.stop() } }
+                            }
+                            Component.onCompleted: if (root.expanded) drift()
+                        }
+                    }
                 }
                 ColumnLayout {
                     id: bannerContent
@@ -199,10 +247,10 @@ PlasmoidItem {
                         Item { Layout.fillWidth: true }
                         QQC2.Switch {
                             enabled: root.link !== "missing" && !root.pending
-                            checked: root.online
+                            checked: root.active
                             onToggled: {
                                 root.setOnline(checked)
-                                checked = Qt.binding(() => root.online) // a click breaks the binding otherwise
+                                checked = Qt.binding(() => root.active) // a click breaks the binding otherwise
                             }
                         }
                     }
@@ -275,17 +323,23 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.margins: Kirigami.Units.largeSpacing
-                icon.name: "network-vpn-disconnected"
-                icon.color: root.stateColor
+                icon.name: root.link === "auth" ? "user-identity-symbolic" : "network-disconnect-symbolic"
+                icon.color: Kirigami.Theme.disabledTextColor
+                icon.width: Kirigami.Units.iconSizes.huge
+                icon.height: Kirigami.Units.iconSizes.huge
                 text: root.link === "missing" ? i18n("Install the Twingate client")
                     : root.link === "unknown" ? i18n("Couldn't read the status")
+                    : root.link === "auth" ? i18n("Sign in to Twingate")
                     : i18n("Twingate is off")
                 explanation: root.link === "missing" ? i18n("This widget needs the twingate command-line tool.")
                            : root.link === "unknown" ? root.statusText
-                           : i18n("Use the switch to connect. If it asks you to sign in, run “twingate auth” in a terminal.")
+                           : root.link === "auth" ? i18n("Twingate needs you to sign in before it can connect.")
+                           : i18n("Use the switch to connect.")
+                helpfulAction: root.link === "auth" && root.authUrl ? signInAction : null
             }
 
-            RowLayout {
+            RowLayout { // heading: dim title, count on the right
+                visible: root.online
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.gridUnit * 0.9
                 Layout.rightMargin: Kirigami.Units.gridUnit * 0.9
@@ -400,7 +454,7 @@ PlasmoidItem {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
             onClicked: mouse => {
-                if (mouse.button === Qt.MiddleButton) root.setOnline(!root.online)
+                if (mouse.button === Qt.MiddleButton) root.setOnline(!root.active)
                 else root.expanded = !root.expanded
             }
         }
