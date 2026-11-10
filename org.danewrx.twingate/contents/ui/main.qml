@@ -206,55 +206,36 @@ PlasmoidItem {
                             }
                         }
                     }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.topMargin: Kirigami.Units.largeSpacing
-                        spacing: Kirigami.Units.smallSpacing
-                        Rectangle { width: Kirigami.Units.smallSpacing * 2; height: width; radius: width / 2; color: root.stateColor }
-                        QQC2.Label {
-                            text: root.pending ? i18n("Working…") : root.title
-                            color: root.stateColor
-                            font.bold: true
-                        }
-                        Item { Layout.fillWidth: true }
-                        Kirigami.Icon {
-                            visible: root.online && root.uptimeText !== ""
-                            Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                            Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                            source: "chronometer-symbolic"
-                            isMask: true
-                            color: Kirigami.Theme.textColor
-                        }
-                        QQC2.Label {
-                            visible: root.online && root.uptimeText !== ""
-                            text: root.uptimeText
-                            color: Kirigami.Theme.textColor
-                            font.family: "monospace"
-                            font.bold: true
-                        }
-                    }
                     Rectangle {
-                        visible: bannerContent.detailRows.length > 0
                         Layout.fillWidth: true
+                        Layout.topMargin: Kirigami.Units.largeSpacing - Kirigami.Units.smallSpacing
                         Layout.bottomMargin: Kirigami.Units.gridUnit * 0.9 - Kirigami.Units.smallSpacing
                         height: 1
                         color: Qt.alpha(Kirigami.Theme.textColor, 0.2)
                     }
                     TextMetrics { id: labelMetrics; font.pixelSize: Kirigami.Units.gridUnit * 0.75; text: "Network" }
-                    readonly property var detailRows: !root.online ? [] : [
-                        { k: i18n("Network"), v: root.networkName, icon: "network-workgroup-symbolic" },
-                        { k: i18n("Address"), v: root.host, icon: "globe-symbolic" }
-                    ].filter(r => r.v !== "")
                     Repeater {
-                        model: bannerContent.detailRows
+                        model: ["status", "uptime", "network", "address"]
                         RowLayout {
+                            id: fact
+                            readonly property var info: {
+                                switch (modelData) {
+                                case "status":  return { k: i18n("Status"), v: root.pending ? i18n("Working…") : root.title,
+                                                         icon: "network-vpn-symbolic", color: root.stateColor }
+                                case "uptime":  return { k: i18n("Uptime"), v: root.online ? root.uptimeText : "",
+                                                         icon: "chronometer-symbolic", mono: true }
+                                case "network": return { k: i18n("Network"), v: root.online ? root.networkName : "", icon: "network-workgroup-symbolic" }
+                                default:        return { k: i18n("Address"), v: root.online ? root.host : "", icon: "globe-symbolic" }
+                                }
+                            }
+                            visible: info.v !== ""
                             Layout.fillWidth: true
                             spacing: Kirigami.Units.largeSpacing
                             Kirigami.Icon {
                                 Layout.preferredWidth: Kirigami.Units.iconSizes.small
                                 Layout.preferredHeight: Kirigami.Units.iconSizes.small
                                 Layout.alignment: Qt.AlignTop
-                                source: modelData.icon
+                                source: fact.info.icon
                                 isMask: true
                                 color: Kirigami.Theme.textColor
                                 opacity: 0.7
@@ -262,15 +243,17 @@ PlasmoidItem {
                             QQC2.Label {
                                 Layout.preferredWidth: Math.ceil(labelMetrics.width) + Kirigami.Units.smallSpacing
                                 Layout.alignment: Qt.AlignTop
-                                text: modelData.k
+                                text: fact.info.k
                                 opacity: 0.7
                                 font.pixelSize: Kirigami.Units.gridUnit * 0.75
                             }
                             QQC2.Label {
                                 Layout.fillWidth: true
-                                text: modelData.v
+                                text: fact.info.v
                                 horizontalAlignment: Text.AlignRight
                                 wrapMode: Text.WrapAnywhere // long hostnames have no spaces to wrap at
+                                color: fact.info.color || Kirigami.Theme.textColor
+                                font.family: fact.info.mono ? "monospace" : Kirigami.Theme.defaultFont.family
                                 font.bold: true
                                 font.pixelSize: Kirigami.Units.gridUnit * 0.8
                             }
