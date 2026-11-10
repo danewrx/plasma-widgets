@@ -266,16 +266,21 @@ PlasmoidItem {
                            : i18n("Use the switch to connect. If it asks you to sign in, run “twingate auth” in a terminal.")
             }
 
-            QQC2.Label {
-                visible: root.online
+            RowLayout {
+                Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.gridUnit * 0.9
+                Layout.rightMargin: Kirigami.Units.gridUnit * 0.9
                 Layout.topMargin: Kirigami.Units.gridUnit * 0.9
                 Layout.bottomMargin: Kirigami.Units.smallSpacing
-                text: i18n("RESOURCES") + "  ·  " + root.items.length
-                opacity: 0.6
-                font.bold: true
-                font.letterSpacing: 1
-                font.pixelSize: Kirigami.Units.gridUnit * 0.7
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    text: i18n("Resources")
+                    opacity: 0.6
+                }
+                QQC2.Label {
+                    text: root.items.length
+                    opacity: 0.6
+                }
             }
             QQC2.ScrollView {
                 visible: root.online
