@@ -10,7 +10,7 @@
         "BugReportUrl": "https://github.com/danewrx/plasma-widgets/issues",
         "Category": "System Information",
         "Copyright": "© 2026 Dane Buchanan",
-        "Description": "Plasmoid to interact with the Twingate Linux client",
+        "Description": "Connect to Twingate and open your resources from the panel",
         "Icon": "network-vpn",
         "Id": "org.danewrx.twingate",
         "License": "MIT",
