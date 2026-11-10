@@ -39,6 +39,35 @@ Control Mullvad VPN from the panel: see your connection at a glance, switch it o
 
 </details>
 
+<details>
+<summary><b>Twingate</b> - Plasmoid to interact with the Twingate Linux client</summary>
+
+<br>
+
+<p align="center">
+  <img src="docs/screenshots/twingate-hero.png" width="720" alt="Twingate widget for Plasma">
+</p>
+
+Control Twingate from the panel: see whether you are connected, switch it on or off, sign in when it asks, and open your resources.
+
+- Panel icon with the Twingate logo, colored by state, in your theme colors or your own
+- Popup with the status, uptime, network and address, and a list of your resources with their favicons and ports
+- A sign-in button when Twingate needs you to sign in
+- Quick toggle by left-click, middle-click or the right-click menu (asks for your password through KDE)
+- Clear messages if the `twingate` CLI is missing
+
+Unofficial: not affiliated with or endorsed by Twingate. Twingate and its logo are trademarks of Twingate Inc.
+
+[Full documentation →](org.danewrx.twingate/README.md)
+
+<p align="center">
+  <img src="docs/screenshots/twingate-popup.png" width="31%" alt="Popup while connected">
+  <img src="docs/screenshots/twingate-signin.png" width="31%" alt="Popup waiting for sign-in">
+  <img src="docs/screenshots/twingate-disconnected.png" width="31%" alt="Popup while disconnected">
+</p>
+
+</details>
+
 ## Install
 
 > [!TIP]

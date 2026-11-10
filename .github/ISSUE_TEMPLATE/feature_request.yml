@@ -8,6 +8,7 @@ body:
       label: Which widget?
       options:
         - mullvad
+        - twingate
         - A new widget
     validations:
       required: true

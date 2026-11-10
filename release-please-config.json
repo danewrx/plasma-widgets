@@ -9,6 +9,14 @@
       "extra-files": [
         { "type": "json", "path": "metadata.json", "jsonpath": "$.KPlugin.Version" }
       ]
+    },
+    "org.danewrx.twingate": {
+      "release-type": "simple",
+      "component": "twingate",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        { "type": "json", "path": "metadata.json", "jsonpath": "$.KPlugin.Version" }
+      ]
     }
   }
 }
