@@ -13,7 +13,15 @@ PlasmoidItem {
     property string statusText: ""     // first line of `twingate status`, e.g. "Online: User"
     property var items:     []         // from `twingate-notifier resources` (JSON), only while online
     property string networkName: ""
-    property string host: ""           // e.g. daneb.us1.twingate.com, from admin_url
+    property string host: ""
+    property double upSince: 0
+    property double nowMs: Date.now()
+    readonly property string uptimeText: {
+        if (!upSince) return ""
+        const t = Math.max(0, Math.floor((nowMs - upSince) / 1000)), d = Math.floor(t / 86400)
+        const p = n => String(n).padStart(2, "0")
+        return (d ? d + "d " : "") + p(Math.floor(t % 86400 / 3600)) + ":" + p(Math.floor(t % 3600 / 60)) + ":" + p(t % 60)
+    }
     property string pending: ""        // "start" | "stop" while a toggle is in flight
     property double pendingSince: 0
     property string lastError: ""
@@ -75,6 +83,8 @@ PlasmoidItem {
                 }
                 root.link = st
                 root.statusText = head
+                if (st === "online" && !root.upSince) exec.connectSource(root.upCmd)
+                if (st !== "online") root.upSince = 0
                 if (st === "online") root.refreshResources()
                 else { root.items = []; root.networkName = ""; root.host = "" }
             } else if (source === "twingate-notifier resources") {
@@ -82,8 +92,10 @@ PlasmoidItem {
                     const j = JSON.parse(out)
                     root.items = j.resources || []
                     root.networkName = j.network_name || ""
-                    root.host = (j.admin_url || "").replace(/^https?:\/\//, "")
+                    root.host = (j.admin_url || "").replace(/^https?:\/\//, "").replace(/^([^.]+)\.[a-z]{2}\d+\./, "$1.")
                 } catch (e) { /* the daemon answers plain text ("Offline") while not connected */ }
+            } else if (source === root.upCmd) {
+                root.upSince = (parseInt(out) || 0) * 1000
             } else {
                 // a toggle finished; pkexec exits 126/127 when the prompt was dismissed
                 if (code) { root.pending = ""; root.lastError = (data["stderr"] || "").toString().trim().split("\n")[0] }
@@ -92,6 +104,7 @@ PlasmoidItem {
         }
     }
 
+    readonly property string upCmd: "date -d \"$(systemctl show twingate -p ActiveEnterTimestamp --value)\" +%s"
     function refresh() { exec.connectSource("twingate status") }
     function refreshResources() { exec.connectSource("twingate-notifier resources") }
     // `twingate start/stop` just run `sudo systemctl`, which cannot prompt from here; pkexec shows a KDE dialog instead.
@@ -103,6 +116,12 @@ PlasmoidItem {
     }
 
     Timer {
+        interval: 1000
+        running: root.expanded && root.online
+        repeat: true
+        onTriggered: root.nowMs = Date.now()
+    }
+    Timer {
         interval: root.pending ? 1000 : 5000
         running: true
         repeat: true
@@ -110,165 +129,224 @@ PlasmoidItem {
         onTriggered: root.refresh()
     }
 
-    fullRepresentation: ColumnLayout {
+    // Plain Item root with the preferred size on it, like the mullvad widget: Plasma sized the popup from the layout's
+    // natural height when the root was the ColumnLayout itself, so the height kept shrinking.
+    fullRepresentation: Item {
         Layout.preferredWidth: Kirigami.Units.gridUnit * 18
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 22
-        spacing: 0
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 26
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 0
 
-        // ---- header: logo mark + wordmark, state pill, switch ----
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: header.implicitHeight + Kirigami.Units.largeSpacing * 2
-            color: Kirigami.Theme.alternateBackgroundColor
-            Rectangle { // edge line
-                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                height: 1
-                color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
-            }
-            RowLayout {
-                id: header
-                anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: Kirigami.Units.largeSpacing }
-                spacing: Kirigami.Units.largeSpacing
+            Rectangle {
+                id: banner
+                Layout.fillWidth: true
+                implicitHeight: bannerContent.implicitHeight + Kirigami.Units.gridUnit * 1.8
+                color: Kirigami.Theme.alternateBackgroundColor
+                Rectangle { // edge line
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: 1
+                    color: Qt.alpha(Kirigami.Theme.textColor, 0.2)
+                }
                 ColumnLayout {
-                    Layout.fillWidth: true
+                    id: bannerContent
+                    anchors { top: parent.top; left: parent.left; right: parent.right; margins: Kirigami.Units.gridUnit * 0.9 }
                     spacing: Kirigami.Units.smallSpacing
-                    IconView { // wordmark: follows the theme text color (white on dark, black on light), not the state
-                        Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
-                        Layout.preferredWidth: Layout.preferredHeight * 748 / 166
-                        value: Qt.resolvedUrl("../icons/twingate-wordmark.png").toString()
-                        tintColor: Kirigami.Theme.textColor
-                    }
-                    Rectangle { // state pill
-                        implicitWidth: pill.implicitWidth + Kirigami.Units.largeSpacing * 2
-                        implicitHeight: pill.implicitHeight + Kirigami.Units.smallSpacing
-                        radius: height / 2
-                        color: Qt.alpha(root.stateColor, 0.18)
-                        RowLayout {
-                            id: pill
-                            anchors.centerIn: parent
-                            spacing: Kirigami.Units.smallSpacing
-                            Rectangle { width: Kirigami.Units.smallSpacing * 2; height: width; radius: width / 2; color: root.stateColor }
-                            QQC2.Label {
-                                text: root.pending ? i18n("Working…") : root.title
-                                color: root.stateColor
-                                font.pixelSize: Kirigami.Units.gridUnit * 0.75
-                                font.bold: true
+                    RowLayout {
+                        Layout.fillWidth: true
+                        IconView { // wordmark: follows the theme text color (white on dark, black on light), not the state
+                            Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
+                            Layout.preferredWidth: Layout.preferredHeight * 748 / 166
+                            value: Qt.resolvedUrl("../icons/twingate-wordmark.png").toString()
+                            tintColor: Kirigami.Theme.textColor
+                        }
+                        Item { Layout.fillWidth: true }
+                        QQC2.Switch {
+                            enabled: root.link !== "missing" && !root.pending
+                            checked: root.online
+                            onToggled: {
+                                root.setOnline(checked)
+                                checked = Qt.binding(() => root.online) // a click breaks the binding otherwise
                             }
                         }
                     }
-                    QQC2.Label {
-                        visible: root.online && root.host !== ""
+                    RowLayout {
                         Layout.fillWidth: true
-                        text: (root.networkName ? root.networkName + " · " : "") + root.host
-                        opacity: 0.65
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.75
-                        elide: Text.ElideRight
-                    }
-                }
-                QQC2.Switch {
-                    enabled: root.link !== "missing" && !root.pending
-                    checked: root.online
-                    onToggled: {
-                        root.setOnline(checked)
-                        checked = Qt.binding(() => root.online) // a click breaks the binding otherwise
-                    }
-                }
-            }
-        }
-        QQC2.Label {
-            visible: text !== ""
-            Layout.fillWidth: true
-            Layout.margins: Kirigami.Units.largeSpacing
-            text: root.lastError
-            wrapMode: Text.Wrap
-            color: Kirigami.Theme.negativeTextColor
-        }
-
-        Kirigami.PlaceholderMessage {
-            visible: !root.online
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.margins: Kirigami.Units.largeSpacing
-            icon.name: "network-vpn-disconnected"
-            icon.color: root.stateColor
-            text: root.link === "missing" ? i18n("Install the Twingate client")
-                : root.link === "unknown" ? i18n("Couldn't read the status")
-                : i18n("Twingate is off")
-            explanation: root.link === "missing" ? i18n("This widget needs the twingate command-line tool.")
-                       : root.link === "unknown" ? root.statusText
-                       : i18n("Use the switch to connect. If it asks you to sign in, run “twingate auth” in a terminal.")
-        }
-
-        // ---- resources ----
-        QQC2.Label {
-            visible: root.online
-            Layout.leftMargin: Kirigami.Units.largeSpacing
-            Layout.topMargin: Kirigami.Units.largeSpacing
-            text: i18n("RESOURCES") + "  " + root.items.length
-            opacity: 0.6
-            font.bold: true
-            font.letterSpacing: 1
-            font.pixelSize: Kirigami.Units.gridUnit * 0.7
-        }
-        ListView {
-            visible: root.online
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.margins: Kirigami.Units.smallSpacing
-            clip: true
-            spacing: Kirigami.Units.smallSpacing
-            model: root.items
-            delegate: QQC2.ItemDelegate {
-                id: card
-                width: ListView.view.width
-                text: modelData.name // for accessibility; the content is drawn below
-                readonly property bool openable: modelData.can_open_in_browser && !!modelData.open_url
-                onClicked: if (openable) Qt.openUrlExternally(modelData.open_url)
-                background: Rectangle {
-                    radius: Kirigami.Units.cornerRadius
-                    color: card.hovered && card.openable ? Qt.alpha(root.stateColor, 0.14) : Qt.alpha(Kirigami.Theme.textColor, 0.06)
-                    border.width: 1
-                    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.1)
-                }
-                contentItem: RowLayout {
-                    spacing: Kirigami.Units.largeSpacing
-                    Rectangle { // icon tile
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 2
-                        Layout.preferredHeight: Kirigami.Units.gridUnit * 2
-                        radius: Kirigami.Units.cornerRadius
-                        color: Qt.alpha(root.stateColor, 0.18)
-                        Kirigami.Icon {
-                            anchors.centerIn: parent
-                            width: Kirigami.Units.iconSizes.smallMedium
-                            height: width
-                            source: card.openable ? "internet-services" : "network-server"
-                            isMask: true
-                            color: root.stateColor
-                        }
-                    }
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-                        QQC2.Label { text: modelData.name; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Layout.topMargin: Kirigami.Units.largeSpacing
+                        spacing: Kirigami.Units.smallSpacing
+                        Rectangle { width: Kirigami.Units.smallSpacing * 2; height: width; radius: width / 2; color: root.stateColor }
                         QQC2.Label {
-                            text: modelData.alias || modelData.address
-                            opacity: 0.65
-                            font.pixelSize: Kirigami.Units.gridUnit * 0.75
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
+                            text: root.pending ? i18n("Working…") : root.title
+                            color: root.stateColor
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
+                        Kirigami.Icon {
+                            visible: root.online && root.uptimeText !== ""
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                            source: "chronometer-symbolic"
+                            isMask: true
+                            color: Kirigami.Theme.textColor
+                        }
+                        QQC2.Label {
+                            visible: root.online && root.uptimeText !== ""
+                            text: root.uptimeText
+                            color: Kirigami.Theme.textColor
+                            font.family: "monospace"
+                            font.bold: true
                         }
                     }
-                    Kirigami.Icon { // "opens in the browser" hint
-                        visible: card.openable
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                        source: "go-next"
-                        isMask: true
-                        color: Kirigami.Theme.textColor
-                        opacity: 0.5
+                    Rectangle {
+                        visible: bannerContent.detailRows.length > 0
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: Kirigami.Units.gridUnit * 0.9 - Kirigami.Units.smallSpacing
+                        height: 1
+                        color: Qt.alpha(Kirigami.Theme.textColor, 0.2)
+                    }
+                    TextMetrics { id: labelMetrics; font.pixelSize: Kirigami.Units.gridUnit * 0.75; text: "Network" }
+                    readonly property var detailRows: !root.online ? [] : [
+                        { k: i18n("Network"), v: root.networkName, icon: "network-workgroup-symbolic" },
+                        { k: i18n("Address"), v: root.host, icon: "globe-symbolic" }
+                    ].filter(r => r.v !== "")
+                    Repeater {
+                        model: bannerContent.detailRows
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.largeSpacing
+                            Kirigami.Icon {
+                                Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                                Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                                Layout.alignment: Qt.AlignTop
+                                source: modelData.icon
+                                isMask: true
+                                color: Kirigami.Theme.textColor
+                                opacity: 0.7
+                            }
+                            QQC2.Label {
+                                Layout.preferredWidth: Math.ceil(labelMetrics.width) + Kirigami.Units.smallSpacing
+                                Layout.alignment: Qt.AlignTop
+                                text: modelData.k
+                                opacity: 0.7
+                                font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                            }
+                            QQC2.Label {
+                                Layout.fillWidth: true
+                                text: modelData.v
+                                horizontalAlignment: Text.AlignRight
+                                wrapMode: Text.WrapAnywhere // long hostnames have no spaces to wrap at
+                                font.bold: true
+                                font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                            }
+                        }
                     }
                 }
             }
+            QQC2.Label {
+                visible: text !== ""
+                Layout.fillWidth: true
+                Layout.margins: Kirigami.Units.largeSpacing
+                text: root.lastError
+                wrapMode: Text.Wrap
+                color: Kirigami.Theme.negativeTextColor
+            }
+
+            Kirigami.PlaceholderMessage {
+                visible: !root.online
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.margins: Kirigami.Units.largeSpacing
+                icon.name: "network-vpn-disconnected"
+                icon.color: root.stateColor
+                text: root.link === "missing" ? i18n("Install the Twingate client")
+                    : root.link === "unknown" ? i18n("Couldn't read the status")
+                    : i18n("Twingate is off")
+                explanation: root.link === "missing" ? i18n("This widget needs the twingate command-line tool.")
+                           : root.link === "unknown" ? root.statusText
+                           : i18n("Use the switch to connect. If it asks you to sign in, run “twingate auth” in a terminal.")
+            }
+
+            QQC2.Label {
+                visible: root.online
+                Layout.leftMargin: Kirigami.Units.gridUnit * 0.9
+                Layout.topMargin: Kirigami.Units.gridUnit * 0.9
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                text: i18n("RESOURCES") + "  ·  " + root.items.length
+                opacity: 0.6
+                font.bold: true
+                font.letterSpacing: 1
+                font.pixelSize: Kirigami.Units.gridUnit * 0.7
+            }
+            QQC2.ScrollView {
+                visible: root.online
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                ListView {
+                    clip: true
+                    model: root.items
+                    delegate: QQC2.ItemDelegate {
+                        id: row
+                        width: ListView.view.width
+                        text: modelData.name
+                        leftPadding: Kirigami.Units.gridUnit * 0.9
+                        rightPadding: Kirigami.Units.gridUnit * 0.9
+                        topPadding: Kirigami.Units.largeSpacing
+                        bottomPadding: Kirigami.Units.largeSpacing
+                        Kirigami.Separator { // thin rule between rows, so the items read as a list
+                            visible: !!row.ListView.view && index < row.ListView.view.count - 1
+                            anchors { left: parent.left; right: parent.right; bottom: parent.bottom
+                                      leftMargin: Kirigami.Units.gridUnit * 0.9; rightMargin: Kirigami.Units.gridUnit * 0.9 }
+                        }
+                        HoverHandler { cursorShape: row.openable ? Qt.PointingHandCursor : Qt.ArrowCursor }
+                        readonly property bool openable: modelData.can_open_in_browser && !!modelData.open_url
+                        // Twingate gives no separate port field, so read it from the URL: "http://host:8384" -> "8384".
+                        readonly property string port: { const m = (modelData.open_url || "").match(/^[a-z]+:\/\/[^\/:]+:(\d+)/); return m ? m[1] : "" }
+                        onClicked: if (openable) Qt.openUrlExternally(modelData.open_url)
+                        contentItem: RowLayout {
+                            spacing: Kirigami.Units.largeSpacing
+                            Kirigami.Icon {
+                                Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                                Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                                source: row.openable ? "internet-services" : "network-server"
+                                opacity: 0.8
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+                                QQC2.Label { // links read as links: link color, underlined on hover
+                                    text: modelData.name
+                                    color: row.openable ? Kirigami.Theme.linkColor : Kirigami.Theme.textColor
+                                    font.underline: row.openable && row.hovered
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                                QQC2.Label {
+                                    text: modelData.alias || modelData.address
+                                    opacity: 0.6
+                                    font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+                            QQC2.Label {
+                                visible: row.port !== ""
+                                text: ":" + row.port
+                                font.family: "monospace"
+                                opacity: 0.7
+                            }
+                            Kirigami.Icon { // "opens in your browser"
+                                visible: row.openable
+                                Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                                Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                                source: "external-link-symbolic"
+                                isMask: true
+                                color: Kirigami.Theme.linkColor
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
 
