@@ -42,3 +42,5 @@ Publishing to the KDE Store is still manual: the store has no documented upload 
 One-time setup: Repo settings → Actions → General → *Workflow permissions*: allow read and write, and tick *Allow GitHub Actions to create and approve pull requests*.
 
 Adding a widget's release setup is step 4 of [Adding a widget](#adding-a-widget).
+
+Keep `"separate-pull-requests": true` in `release-please-config.json`. Without it, as soon as there is more than one widget, release-please groups them into a single PR titled `chore: release main`, which has no scope and fails the PR title check.
