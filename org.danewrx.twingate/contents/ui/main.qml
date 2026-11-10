@@ -331,8 +331,8 @@ PlasmoidItem {
                         text: modelData.name
                         leftPadding: Kirigami.Units.gridUnit * 0.9
                         rightPadding: Kirigami.Units.gridUnit * 0.9
-                        topPadding: Kirigami.Units.largeSpacing
-                        bottomPadding: Kirigami.Units.largeSpacing
+                        topPadding: Kirigami.Units.largeSpacing * 1.5
+                        bottomPadding: Kirigami.Units.largeSpacing * 1.5
                         Kirigami.Separator { // thin rule between rows, so the items read as a list
                             visible: !!row.ListView.view && index < row.ListView.view.count - 1
                             anchors { left: parent.left; right: parent.right; bottom: parent.bottom
@@ -347,8 +347,8 @@ PlasmoidItem {
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.largeSpacing
                             Item {
-                                Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
-                                Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                                Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                                Layout.preferredHeight: Kirigami.Units.iconSizes.medium
                                 Kirigami.Icon {
                                     anchors.fill: parent
                                     visible: favicon.status !== Image.Ready
@@ -367,26 +367,22 @@ PlasmoidItem {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 0
-                                QQC2.Label { // links read as links: link color, underlined on hover
+                                QQC2.Label {
                                     text: modelData.name
                                     color: row.openable ? Kirigami.Theme.linkColor : Kirigami.Theme.textColor
+                                    font.bold: true
+                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
                                     font.underline: row.openable && row.hovered
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
                                 QQC2.Label {
-                                    text: modelData.alias || modelData.address
-                                    opacity: 0.6
-                                    font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                                    text: (modelData.alias || modelData.address) + (row.port ? ":" + row.port : "")
+                                    font: Kirigami.Theme.smallFont
+                                    opacity: 0.65
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
-                            }
-                            QQC2.Label {
-                                visible: row.port !== ""
-                                text: ":" + row.port
-                                font.family: "monospace"
-                                opacity: 0.7
                             }
                             Kirigami.Icon { // "opens in your browser"
                                 visible: row.openable
