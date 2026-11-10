@@ -105,6 +105,42 @@ PlasmoidItem {
     }
 
     readonly property string upCmd: "date -d \"$(systemctl show twingate -p ActiveEnterTimestamp --value)\" +%s"
+    // ---- favicons: a resource's own icon, found through the tunnel ----
+    property var icons: ({})           // open_url -> icon url ("" = the page has none, use the default icon)
+    property var iconBusy: ({})        // open_url -> true while a request is in flight
+    function resolveUrl(base, href) {
+        const m = base.match(/^([a-z]+:\/\/[^\/?#]+)([^?#]*)/i)
+        if (!m) return ""
+        const path = m[2] || "/"
+        const url = /^[a-z][a-z0-9+.-]*:/i.test(href) ? href
+                  : href.startsWith("//") ? base.split(":")[0] + ":" + href
+                  : href.startsWith("/") ? m[1] + href
+                  : m[1] + path.slice(0, path.lastIndexOf("/") + 1) + href
+        return /^https?:\/\//i.test(url) ? url : ""
+    }
+    function fetchIcon(url) {
+        if (!/^https?:\/\//i.test(url) || url in icons || iconBusy[url]) return
+        iconBusy[url] = true
+        const xhr = new XMLHttpRequest()
+        xhr.timeout = 5000
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            delete iconBusy[url]
+            if (xhr.status === 0) return
+            let icon = ""
+            for (const tag of (xhr.status === 200 ? xhr.responseText.match(/<link\b[^>]*>/gi) : null) || []) {
+                const rel = tag.match(/\brel\s*=\s*["']([^"']*)["']/i), href = tag.match(/\bhref\s*=\s*["']([^"']*)["']/i)
+                if (rel && href && rel[1].toLowerCase().split(/\s+/).includes("icon")) { icon = resolveUrl(url, href[1]); break }
+            }
+            if (!icon) icon = resolveUrl(url, "/favicon.ico")
+            const next = {}
+            for (const k in icons) next[k] = icons[k]
+            next[url] = icon
+            icons = next
+        }
+        xhr.open("GET", url)
+        xhr.send()
+    }
     function refresh() { exec.connectSource("twingate status") }
     function refreshResources() { exec.connectSource("twingate-notifier resources") }
     // `twingate start/stop` just run `sudo systemctl`, which cannot prompt from here; pkexec shows a KDE dialog instead.
@@ -303,17 +339,30 @@ PlasmoidItem {
                                       leftMargin: Kirigami.Units.gridUnit * 0.9; rightMargin: Kirigami.Units.gridUnit * 0.9 }
                         }
                         HoverHandler { cursorShape: row.openable ? Qt.PointingHandCursor : Qt.ArrowCursor }
+                        Component.onCompleted: if (openable) root.fetchIcon(modelData.open_url)
                         readonly property bool openable: modelData.can_open_in_browser && !!modelData.open_url
                         // Twingate gives no separate port field, so read it from the URL: "http://host:8384" -> "8384".
                         readonly property string port: { const m = (modelData.open_url || "").match(/^[a-z]+:\/\/[^\/:]+:(\d+)/); return m ? m[1] : "" }
                         onClicked: if (openable) Qt.openUrlExternally(modelData.open_url)
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.largeSpacing
-                            Kirigami.Icon {
+                            Item {
                                 Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                                 Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
-                                source: row.openable ? "internet-services" : "network-server"
-                                opacity: 0.8
+                                Kirigami.Icon {
+                                    anchors.fill: parent
+                                    visible: favicon.status !== Image.Ready
+                                    source: row.openable ? "internet-services" : "network-server"
+                                    opacity: 0.8
+                                }
+                                Image {
+                                    id: favicon
+                                    anchors.fill: parent
+                                    source: row.openable ? (root.icons[modelData.open_url] || "") : ""
+                                    sourceSize: Qt.size(width * 2, height * 2)
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
